@@ -4,6 +4,7 @@ from QLearner import QLearner
 import numpy as np
 from scipy.stats import bernoulli
 from History import History
+from itertools import product
 
 
 class MCTSNode:
@@ -55,14 +56,14 @@ class MCTree:
         :param Q_pi: (2, 2) array actions X query_inds
         :return: action, query_ind indices
         """
-        probs = np.exp(Q_pi[:, 0])/np.sum(np.exp(Q_pi[:, 0]))  # Choosing only arm without quering
+        probs = np.exp(Q_pi[:, 0]) / np.sum(np.exp(Q_pi[:, 0]))  # Choosing only arm without quering
         a_q = np.random.multinomial(1, probs)  # action = flattened array of 0's and 1 in desired action index
         return np.unravel_index(np.argmax(a_q, axis=None), a_q.shape)[0]
 
     def get_action_uct(self, node):
         Q = self.qlearner.Q.copy()
         N_per_action = node.N_per_action.copy()
-        uct_matrix = Q + self.exploration_const * np.sqrt(np.log(node.N)/N_per_action)
+        uct_matrix = Q + self.exploration_const * np.sqrt(np.log(node.N) / N_per_action)
         return np.unravel_index(np.argmax(uct_matrix, axis=None), uct_matrix.shape)
 
     def tree_search(self, Q_M, history, max_depth, max_simulations: int = 1):
@@ -73,11 +74,24 @@ class MCTree:
             P_bernoullis = self.init_dist_params(history)
             R = self.simulate(root, Q_pi, P_bernoullis, max_depth, curr_d=0)
 
-        return np.unravel_index(np.argmax(self.qlearner.Q, axis=None), self.qlearner.Q.shape)
+        action, query_ind = np.unravel_index(np.argmax(self.qlearner.Q, axis=None), self.qlearner.Q.shape)
+
+        # Update MCTree's nodes
+        if query_ind:
+            for t_r in (0, 1):
+                t_h = root.history.update(action, t_r)
+                if self.nodes.get(t_h, None) is None:
+                    self.nodes[t_h] = MCTSNode(t_h, parent=root)
+        else:
+            t_h = root.history.update(action, reward=None)
+            self.nodes[t_h] = MCTSNode(t_h, parent=root)
+
+        return action, query_ind
 
     def simulate(self, node: MCTSNode, Q_pi, P_bernoullis, max_depth, curr_d):
         if curr_d == max_depth:
             return 0
+
         # Rollout
         if node.N == 0:
             query_ind = 0
@@ -94,13 +108,17 @@ class MCTree:
         action, query_ind = self.get_action_uct(node)
         r = P_bernoullis[action].rvs()  # P(;|a,theta)
         next_node = node.expand(action, query_ind, r)
+
+        # Update MCTree's nodes
         if self.nodes.get(next_node.history, None) is None:
             self.nodes[next_node.history] = next_node
+
         if query_ind == 0:
-            R = r + self.simulate(next_node, Q_pi, P_bernoullis, max_depth, curr_d+1)
+            R = r + self.simulate(next_node, Q_pi, P_bernoullis, max_depth, curr_d + 1)
         else:
-            R = r + self.simulate(next_node, Q_pi, P_bernoullis, max_depth, curr_d+1) - self.qlearner.query_cost
-            self.qlearner.q_update(action, query_ind, r)  # TODO: Doesn't it make more sense to update Q values before doing further simulations?
+            R = r + self.simulate(next_node, Q_pi, P_bernoullis, max_depth, curr_d + 1) - self.qlearner.query_cost
+            self.qlearner.q_update(action, query_ind,
+                                   r)  # TODO: Doesn't it make more sense to update Q values before doing further simulations?
 
         node.N += 1
         node.R += R
