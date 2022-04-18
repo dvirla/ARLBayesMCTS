@@ -1,9 +1,17 @@
 class History:
-    def __init__(self):
-        self.actions = []
-        self.rewards = []
-        self.arm_0 = {'succ': 0, 'fails': 0}
-        self.arm_1 = {'succ': 0, 'fails': 0}
+    def __init__(self, actions=None, rewards=None, arm_0=None, arm_1=None):
+        if actions is None and rewards is None and arm_0 is None and arm_0 is None:
+            self.actions = []
+            self.rewards = []
+            self.arm_0 = {'succ': 0, 'fails': 0}
+            self.arm_1 = {'succ': 0, 'fails': 0}
+        elif actions is not None and rewards is not None and arm_0 is not None and arm_0 is not None:
+            self.actions = actions
+            self.rewards = rewards
+            self.arm_0 = arm_0
+            self.arm_1 = arm_1
+        else:
+            raise Exception("History init got unhandled inputs")
 
     def update(self, action, reward):
         """
@@ -12,18 +20,20 @@ class History:
         """
         assert action == 0 or action == 1
         assert reward == 0 or reward == 1 or reward is None
+        actions, rewards, arm_0, arm_1 = self.actions.copy(), self.rewards.copy(), self.arm_0.copy(), self.arm_1.copy()
         if action == 0:
             if reward == 1:
-                self.arm_0['succ'] += 1
+                arm_0['succ'] += 1
             elif reward == 0:
-                self.arm_0['fails'] += 1
+                arm_0['fails'] += 1
         else:
             if reward == 1:
-                self.arm_1['succ'] += 1
+                arm_1['succ'] += 1
             elif reward == 0:
-                self.arm_1['fails'] += 1
-        self.actions.append(action)
-        self.rewards.append(reward)
+                arm_1['fails'] += 1
+        actions.append(action)
+        rewards.append(reward)
+        return History(actions, rewards, arm_0, arm_1)
 
     def get_arm_dicts(self, arm):
         """
