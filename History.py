@@ -1,11 +1,11 @@
 class History:
     def __init__(self, actions=None, rewards=None, arm_0=None, arm_1=None):
-        if actions is None and rewards is None and arm_0 is None and arm_0 is None:
+        if actions is None and rewards is None and arm_0 is None and arm_1 is None:
             self.actions = []
             self.rewards = []
             self.arm_0 = {'succ': 0, 'fails': 0}
             self.arm_1 = {'succ': 0, 'fails': 0}
-        elif actions is not None and rewards is not None and arm_0 is not None and arm_0 is not None:
+        elif actions is not None and rewards is not None and arm_0 is not None and arm_1 is not None:
             self.actions = actions
             self.rewards = rewards
             self.arm_0 = arm_0

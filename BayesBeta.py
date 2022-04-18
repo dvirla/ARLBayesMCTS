@@ -8,6 +8,10 @@ class BayesBeta:
         self.arm = arm
         self.a = a
         self.b = b
+        if a == 0:
+            self.a = 0.5
+        if b == 0:
+            self.b = 0.5
 
     def update_a_b(self, history: History):
         arm_dict = history.get_arm_dicts(self.arm)

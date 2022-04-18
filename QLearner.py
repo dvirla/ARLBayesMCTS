@@ -15,3 +15,4 @@ class QLearner:
         # reward_idx = self.reward_to_idx[reward]
         old_val = self.Q[action, query_ind]
         self.Q[action, query_ind] += self.learning_rate * (reward - old_val - self.query_cost + self.discount_factor * max(self.Q[action, :]))
+        # TODO: need to update according to the original BAMCP papaer

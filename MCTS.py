@@ -8,7 +8,7 @@ from History import History
 
 class MCTSNode:
     def __init__(self, history: History, parent=None):
-        self.children = {(0, 0): None, (0, 1): None, (1, 0): None, (1, 1): None}
+        self.children = {}
         self.history = history  # Including action and rewards of this node
         self.parent = parent
         self.N = 0
@@ -17,7 +17,7 @@ class MCTSNode:
         self.N_per_action = np.ones((2, 2))  # 2 arms, 2 query inds
 
     def expand(self, action, query_ind, r):
-        if self.children[(action, query_ind)] is None:
+        if self.children.get((action, query_ind)) is None:
             if query_ind:
                 observed_r = r
             else:
@@ -31,7 +31,7 @@ class MCTSNode:
         return new_node
 
 
-class MCTRee:
+class MCTree:
     def __init__(self, history, learning_rate, discount_factor, query_cost, exploration_const):
         self.root = MCTSNode(history)
         self.nodes = {history: self.root}
@@ -62,8 +62,8 @@ class MCTRee:
     def get_action_uct(self, node):
         Q = self.qlearner.Q.copy()
         N_per_action = node.N_per_action.copy()
-        uct_matrix = Q + N_per_action
-        return np.unravel_index(np.argmax(uct_matrix, axis=None), uct_matrix.shape)[0]
+        uct_matrix = Q + self.exploration_const * np.sqrt(np.log(node.N)/N_per_action)
+        return np.unravel_index(np.argmax(uct_matrix, axis=None), uct_matrix.shape)
 
     def tree_search(self, Q_M, history, max_depth, max_simulations: int = 1):
         assert max_simulations is not None
