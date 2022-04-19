@@ -4,17 +4,40 @@ import pandas as pd
 import numpy as np
 
 
-def plot_heatmap(data, cost):
+def plot_heatmap(data, cost, cost_idx):
     ax = sns.heatmap(data, linewidth=0.5, cmap='coolwarm')
     plt.title(f"Cost = {cost}\nQuery Indicator Heatmap")
-    plt.savefig(f'./fixed_cost_heatmap.jpg')
+    plt.savefig(f'./Images/fixed_cost_heatmap_{cost_idx}.jpg')
+
+
+def plot_queries(arr, title, ylabel, path, horizon):
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.plot(list(range(1, horizon + 1)), arr)
+    ax.set_xticks(list(range(1, horizon + 1, 4)))
+    ax.set_title(title)
+    ax.set_xlabel('Timestamp')
+    ax.set_ylabel(ylabel)
+    plt.savefig(path)
 
 
 if __name__ == "__main__":
-    df = pd.read_csv('./record.csv')
-    queries_map = np.zeros((100, 50))  # runs, horizon
-    for i, row in df.iterrows():
-        run = int(row['run'])
-        t = i%50
-        queries_map[run][t] = row['query_ind']
-    plot_heatmap(queries_map, 0.5)
+    horizon = 50
+    runs = 100
+    for i, query_cost in enumerate((0, 0.3, 0.5, 1, 100)):
+        df = pd.read_csv(f'./records/record_{i}.csv')
+
+        queries_map = np.zeros((runs, horizon))
+        for j, row in df.iterrows():
+            run = int(row['run'])
+            t = j % horizon
+            queries_map[run][t] = row['query_ind']
+
+        plot_heatmap(queries_map, query_cost, i)
+
+        df['timestamp'] = [k % horizon for k in range(len(df))]
+        means_df = df.groupby('timestamp').mean()[['reward', 'query_ind', 'regret', 'chosen_arm']]
+
+        plot_queries(means_df['reward'], f'Average Reward at Cost = {query_cost}', 'Avg. Reward', f'./Images/average_reward_cost_{i}.jpg', horizon)
+        plot_queries(means_df['query_ind'], f'Query Probability at Cost = {query_cost}', 'Query Probability', f'./Images/query_prob_cost_{i}.jpg', horizon)
+        plot_queries(means_df['regret'], f'Average Regret at Cost = {query_cost}', 'Avg. Regret', f'./Images/average_regret_cost_{i}.jpg', horizon)
+        plot_queries(means_df['chosen_arm'], f'Average Chosen Arm at Cost = {query_cost}', 'Avg. Arm', f'./Images/average_chosen_arm_cost_{i}.jpg', horizon)

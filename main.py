@@ -18,6 +18,7 @@ def BAMCP_PP(T, learning_rate, discount_factor, query_cost, exploration_const, m
     """
     rewards, chosen_arms, query_inds, regrets = [], [], [], []
     history = History()
+    regret = 0
     qlearner = QLearner(learning_rate, discount_factor, query_cost)
     mctree = MCTree(history, learning_rate, discount_factor, query_cost, exploration_const)
     for t in range(T):
@@ -31,7 +32,7 @@ def BAMCP_PP(T, learning_rate, discount_factor, query_cost, exploration_const, m
             observed_reward = None
         history = history.update(action, observed_reward)
 
-        regret = arms_thetas[action] - r
+        regret += arms_thetas[action] - r
         rewards.append(r)
         chosen_arms.append(action)
         query_inds.append(query_ind)
@@ -42,8 +43,7 @@ def BAMCP_PP(T, learning_rate, discount_factor, query_cost, exploration_const, m
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--learning_rate', type=float, default=1.,
-                        metavar='')  # No learning rate according to both papers
+    parser.add_argument('--learning_rate', type=float, default=1., metavar='')  # No learning rate according to both papers
     parser.add_argument('--discount_factor', type=float, default=0.95, metavar='')  # According to original BAMCP paper
     parser.add_argument('--query_cost', type=float, default=0.5, metavar='')  # According to BAMCP++ paper
     parser.add_argument('--exploration_const', type=float, default=3., metavar='')  # According to original BAMCP paper
@@ -54,18 +54,20 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    recorder = {'run': [], 'chosen_arm': [], 'reward': [], 'query_ind': [], 'regret': []}
+    for i, query_cost in enumerate((0, 0.3, 0.5, 1, 100)):
+        recorder = {'run': [], 'query_cost': [], 'chosen_arm': [], 'reward': [], 'query_ind': [], 'regret': []}
+        print(f'Starting cost = {query_cost}')
+        for run in tqdm(range(args.runs)):
+            chosen_arms, rewards, query_inds, regrets = BAMCP_PP(args.horizon, args.learning_rate, args.discount_factor,
+                                                                 query_cost,
+                                                                 args.exploration_const, args.max_simulations,
+                                                                 args.arms_thetas)
+            recorder['run'].extend([run] * args.horizon)
+            recorder['query_cost'].extend([query_cost] * args.horizon)
+            recorder['chosen_arm'].extend(chosen_arms)
+            recorder['reward'].extend(rewards)
+            recorder['query_ind'].extend(query_inds)
+            recorder['regret'].extend(regrets)
 
-    for run in tqdm(range(args.runs)):
-        chosen_arms, rewards, query_inds, regrets = BAMCP_PP(args.horizon, args.learning_rate, args.discount_factor,
-                                                             args.query_cost,
-                                                             args.exploration_const, args.max_simulations,
-                                                             args.arms_thetas)
-        recorder['run'].extend([run] * args.horizon)
-        recorder['chosen_arm'].extend(chosen_arms)
-        recorder['reward'].extend(rewards)
-        recorder['query_ind'].extend(query_inds)
-        recorder['regret'].extend(regrets)
-
-    df = pd.DataFrame(recorder)
-    df.to_csv('./record.csv')
+        df = pd.DataFrame(recorder)
+        df.to_csv(f'./records/record_{i}.csv')
