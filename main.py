@@ -54,7 +54,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    for i, query_cost in enumerate((0, 0.3, 0.5, 1, 100)):
+    for i, query_cost in enumerate((0.3, 0.5, 1)):
+    # for i, query_cost in enumerate((0, 0.3, 0.5, 1, 100)):
         recorder = {'run': [], 'query_cost': [], 'chosen_arm': [], 'reward': [], 'query_ind': [], 'regret': []}
         print(f'Starting cost = {query_cost}')
         for run in tqdm(range(args.runs)):
@@ -70,4 +71,4 @@ if __name__ == "__main__":
             recorder['regret'].extend(regrets)
 
         df = pd.DataFrame(recorder)
-        df.to_csv(f'./records/record_{i}.csv')
+        df.to_csv(f'./records/record_{i+5}.csv')
