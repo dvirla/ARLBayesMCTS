@@ -1,5 +1,4 @@
 from scipy.stats import beta
-from History import History
 
 
 class BayesBeta:
@@ -12,11 +11,6 @@ class BayesBeta:
             self.a = 0.5
         if b == 0:
             self.b = 0.5
-
-    def update_a_b(self, history: History):
-        arm_dict = history.get_arm_dicts(self.arm)
-        self.a += arm_dict['succ']
-        self.b += arm_dict['fails']
 
     def pdf(self, x):
         return beta.pdf(x, self.a, self.b)

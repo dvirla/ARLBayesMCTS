@@ -4,9 +4,9 @@ import pandas as pd
 import numpy as np
 
 
-def plot_heatmap(data, cost, cost_idx):
+def plot_heatmap(data, cost, cost_idx, arm_dist_title):
     ax = sns.heatmap(data, linewidth=0.5, cmap='coolwarm', vmin=0, vmax=1)
-    plt.title(f"Cost = {cost}\nQuery Indicator Heatmap\nArms Distribution = {0.2, 0.8}")
+    plt.title(f"Cost = {cost}\nQuery Indicator Heatmap\n{arm_dist_title}")
     plt.savefig(f'./Images/fixed_cost_heatmap_{cost_idx}.jpg')
 
 
@@ -21,12 +21,12 @@ def plot_queries(arr, title, ylabel, path, horizon):
 
 
 if __name__ == "__main__":
-    horizon = 20  # 50
-    runs = 50  # 100
+    horizon = 30
+    runs = 100
     arm_dist_title = 'Arms Distribution = {0.2, 0.8}'
-    for i, query_cost in enumerate((0.3, 0.5)):
-        k = i+5
-        df = pd.read_csv(f'./records/record_{k}.csv')
+    for i, query_cost in enumerate((0, 0.3, 0.5, 1, 100)):
+        k = i
+        df = pd.read_csv(f'./records/record_q_per_node_{k}.csv')
 
         queries_map = np.zeros((runs, horizon))
         for j, row in df.iterrows():
@@ -34,7 +34,7 @@ if __name__ == "__main__":
             t = j % horizon
             queries_map[run][t] = row['query_ind']
 
-        plot_heatmap(queries_map, query_cost, k)
+        plot_heatmap(queries_map, query_cost, k, arm_dist_title)
 
         df['timestamp'] = [k % horizon for k in range(len(df))]
         means_df = df.groupby('timestamp').mean()[['reward', 'query_ind', 'regret', 'chosen_arm']]
