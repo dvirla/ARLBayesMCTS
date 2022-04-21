@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser.add_argument('--query_cost', type=float, default=0.5, metavar='')  # According to BAMCP++ paper
     parser.add_argument('--exploration_const', type=float, default=5., metavar='')  # TODO: optimize?
     parser.add_argument('--max_simulations', type=int, default=100, metavar='')  # TODO: maybe can be higher?
-    parser.add_argument('--arms_thetas', type=tuple, default=(0.2, 0.8), metavar='')  # According to BAMCP++ paper
+    parser.add_argument('--arms_thetas', type=tuple, default=(0., 1.), metavar='')  # According to BAMCP++ paper
     parser.add_argument('--horizon', type=int, default=30, metavar='')
     parser.add_argument('--runs', type=int, default=100, metavar='')
     parser.add_argument('--delayed_tree_expansion', type=int, default=0, metavar='')  # TODO: optimize?
@@ -55,6 +55,7 @@ if __name__ == "__main__":
     assert args.horizon > args.delayed_tree_expansion + 1
 
     for i, query_cost in enumerate((0, 0.3, 0.5, 1, 100)):
+        k = i + 5
         recorder = {'run': [], 'query_cost': [], 'chosen_arm': [], 'reward': [], 'query_ind': [], 'regret': []}
         print(f'Starting cost = {query_cost}')
         for run in tqdm(range(args.runs)):
@@ -70,4 +71,4 @@ if __name__ == "__main__":
             recorder['regret'].extend(regrets)
 
         df = pd.DataFrame(recorder)
-        df.to_csv(f'./records/record_q_per_node_{i}.csv')
+        df.to_csv(f'./records_q_per_node/record_q_per_node_{k}.csv')
