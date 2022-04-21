@@ -7,7 +7,7 @@ import numpy as np
 def plot_heatmap(data, cost, cost_idx, arm_dist_title):
     ax = sns.heatmap(data, linewidth=0.5, cmap='coolwarm', vmin=0, vmax=1)
     plt.title(f"Cost = {cost}\nQuery Indicator Heatmap\n{arm_dist_title}")
-    plt.savefig(f'./Images/fixed_cost_heatmap_{cost_idx}.jpg')
+    plt.savefig(f'./images_q_per_node/fixed_cost_heatmap_{cost_idx}.jpg')
 
 
 def plot_queries(arr, title, ylabel, path, horizon):
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     arm_dist_title = 'Arms Distribution = {0.2, 0.8}'
     for i, query_cost in enumerate((0, 0.3, 0.5, 1, 100)):
         k = i
-        df = pd.read_csv(f'./records/record_q_per_node_{k}.csv')
+        df = pd.read_csv(f'./records_q_per_node_/record_q_per_node_{k}.csv')
 
         queries_map = np.zeros((runs, horizon))
         for j, row in df.iterrows():
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         df['timestamp'] = [k % horizon for k in range(len(df))]
         means_df = df.groupby('timestamp').mean()[['reward', 'query_ind', 'regret', 'chosen_arm']]
 
-        plot_queries(means_df['reward'], f'Average Reward at Cost = {query_cost}\n{arm_dist_title}', 'Avg. Reward', f'./Images/average_reward_cost_{k}.jpg', horizon)
-        plot_queries(means_df['query_ind'], f'Query Probability at Cost = {query_cost}\n{arm_dist_title}', 'Query Probability', f'./Images/query_prob_cost_{k}.jpg', horizon)
-        plot_queries(means_df['regret'], f'Average Regret at Cost = {query_cost}\n{arm_dist_title}', 'Avg. Regret', f'./Images/average_regret_cost_{k}.jpg', horizon)
-        plot_queries(means_df['chosen_arm'], f'Average Chosen Arm at Cost = {query_cost}\n{arm_dist_title}', 'Avg. Arm', f'./Images/average_chosen_arm_cost_{k}.jpg', horizon)
+        plot_queries(means_df['reward'], f'Average Reward at Cost = {query_cost}\n{arm_dist_title}', 'Avg. Reward', f'./images_q_per_node/average_reward_cost_{k}.jpg', horizon)
+        plot_queries(means_df['query_ind'], f'Query Probability at Cost = {query_cost}\n{arm_dist_title}', 'Query Probability', f'./images_q_per_node/query_prob_cost_{k}.jpg', horizon)
+        plot_queries(means_df['regret'], f'Average Regret at Cost = {query_cost}\n{arm_dist_title}', 'Avg. Regret', f'./images_q_per_node/average_regret_cost_{k}.jpg', horizon)
+        plot_queries(means_df['chosen_arm'], f'Average Chosen Arm at Cost = {query_cost}\n{arm_dist_title}', 'Avg. Arm', f'./images_q_per_node/average_chosen_arm_cost_{k}.jpg', horizon)
