@@ -12,8 +12,8 @@ class MCTSNode:
         self.parent = parent
         self.N = 0
         # TODO: is 1e-3 ok instead of zero?
-        self.N_per_action = np.ones((2, 2)) * 1e-3  # 2 arms, 2 query inds
-        self.Q_per_action = np.ones((2, 2)) * 1e-3
+        self.N_per_action = np.ones((2, 2)) * 1e-5  # 2 arms, 2 query inds
+        self.Q_per_action = np.ones((2, 2)) * 1e-5
 
     def expand(self):
         for action, query_ind in product((0, 1), (0, 1)):
