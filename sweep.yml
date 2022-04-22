@@ -1,4 +1,8 @@
 program: experiment.py
+command:
+  - python3
+  - ${program}
+  - ${args}
 method: bayes
 metric:
   name: Average_Reward
