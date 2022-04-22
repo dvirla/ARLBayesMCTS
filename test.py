@@ -1,9 +1,9 @@
 import argparse
-from QLearner import QLearner
 from MCTS import MCTree
 from scipy.stats import bernoulli
 import pandas as pd
 from tqdm import tqdm
+import numpy as np
 
 
 def BAMCP_PP(T, learning_rate, discount_factor, query_cost, exploration_const, max_simulations,
@@ -17,14 +17,14 @@ def BAMCP_PP(T, learning_rate, discount_factor, query_cost, exploration_const, m
     rewards, chosen_arms, query_inds, regrets = [], [], [], []
     actions_history = tuple([])
     regret = 0
-    qlearner = QLearner(learning_rate, discount_factor, query_cost)
+    Q = np.random.randn(2, 2)
     mctree = MCTree(actions_history, learning_rate, discount_factor, query_cost, exploration_const)
     for t in range(T):
-        action, query_ind = mctree.tree_search(qlearner.Q.copy(), actions_history, max_depth=T - t - delayed_tree_expansion,
+        action, query_ind = mctree.tree_search(Q.copy(), actions_history, max_depth=T - t - delayed_tree_expansion,
                                                max_simulations=max_simulations)
         r = bernoulli(arms_thetas[action]).rvs()
         if query_ind:
-            qlearner.q_update(action, query_ind, r)
+            mctree.q_update(Q, action, query_ind, r)
 
         new_history = list(actions_history)
         new_history.append((action, query_ind))
