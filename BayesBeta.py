@@ -2,7 +2,7 @@ from scipy.stats import beta
 
 
 class BayesBeta:
-    def __init__(self, arm: int, a=0.5, b=0.5):
+    def __init__(self, arm, a=0.5, b=0.5):
         assert arm == 0 or arm == 1
         self.arm = arm
         self.a = a

@@ -32,7 +32,7 @@ class MCTSNode:
 
 
 class MCTree:
-    def __init__(self, actions_history: tuple, learning_rate, discount_factor, query_cost, exploration_const):
+    def __init__(self, actions_history, learning_rate, discount_factor, query_cost, exploration_const):
         """
         :param history: A tuple (in order to be hashable) of triplets (action, query_ind, reward)
         """
@@ -75,7 +75,7 @@ class MCTree:
         a_q = np.random.multinomial(1, probs)  # action = flattened array of 0's and 1 in desired action index
         return np.unravel_index(np.argmax(a_q, axis=None), a_q.shape)[0]
 
-    def tree_search(self, Q_M, actions_history, max_depth, max_simulations: int = 1):
+    def tree_search(self, Q_M, actions_history, max_depth, max_simulations=1):
         root = self.nodes[actions_history]
         for _ in range(max_simulations):
             Q_pi = deepcopy(Q_M)
@@ -86,7 +86,7 @@ class MCTree:
 
         return action, query_ind
 
-    def simulate(self, node: MCTSNode, Q_pi, P_bernoullis, max_depth, curr_d):
+    def simulate(self, node, Q_pi, P_bernoullis, max_depth, curr_d):
         if curr_d == max_depth:
             return 0
 
