@@ -7,8 +7,7 @@ import csv
 import wandb
 
 
-def BAMCP_PP(T, learning_rate, discount_factor, query_cost, exploration_const, max_simulations,
-             arms_thetas: tuple, delayed_tree_expansion):
+def BAMCP_PP(T, learning_rate, discount_factor, query_cost, exploration_const, max_simulations, arms_thetas, delayed_tree_expansion):
     """
     :param T: Horizon
     :param learning_rate: for Q values
