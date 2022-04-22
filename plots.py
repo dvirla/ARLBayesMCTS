@@ -23,9 +23,9 @@ def plot_queries(arr, title, ylabel, path, horizon):
 if __name__ == "__main__":
     horizon = 30
     runs = 100
-    arm_dist_title = 'Arms Distribution = {0., 1.}'
+    arm_dist_title = 'Arms Distribution = {0.2, 0.8}'
     for i, query_cost in enumerate((0, 0.3, 0.5, 1, 100)):
-        k = i + 5
+        k = i
         df = pd.read_csv(f'./records_q_per_node/record_q_per_node_{k}.csv')
 
         queries_map = np.zeros((runs, horizon))
