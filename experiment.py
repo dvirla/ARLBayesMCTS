@@ -68,7 +68,7 @@ if __name__ == "__main__":
         # writer.writeheader()
     for horizon in [10, 20, 30, 40, 50]:
         pbar = tqdm(range(args.runs))
-        pbar.set_description(f'Horizon = {horizon}')
+        pbar.set_description('Horizon = ', horizon)
         total_reward_per_run, total_regret_per_run = 0, 0
         for run in pbar:
             avg_reward, avg_regret = BAMCP_PP(horizon, args.learning_rate, args.discount_factor,
