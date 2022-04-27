@@ -20,7 +20,7 @@ def BAMCP_PP(writer, run, T, learning_rate, discount_factor, query_cost, explora
     Q = np.random.randn(2, 2)
     mctree = MCTree(actions_history, learning_rate, discount_factor, query_cost, exploration_const)
     for t in range(T):
-        action, query_ind = mctree.tree_search(Q.copy(), actions_history, max_depth=T - t - delayed_tree_expansion,
+        action, query_ind = mctree.tree_search(Q.copy(), actions_history, max_depth=delayed_tree_expansion,
                                                max_simulations=max_simulations)
         r = bernoulli(arms_thetas[action]).rvs()
         if query_ind:
