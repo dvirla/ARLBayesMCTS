@@ -4,9 +4,10 @@ from scipy.stats import bernoulli
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
+import csv
 
 
-def BAMCP_PP(T, learning_rate, discount_factor, query_cost, exploration_const, max_simulations,
+def BAMCP_PP(writer, run, T, learning_rate, discount_factor, query_cost, exploration_const, max_simulations,
              arms_thetas: tuple, delayed_tree_expansion):
     """
     :param T: Horizon
@@ -36,6 +37,10 @@ def BAMCP_PP(T, learning_rate, discount_factor, query_cost, exploration_const, m
         query_inds.append(query_ind)
         regrets.append(regret)
 
+        writer.writerow(
+            {'run': run, 'timestep': t, 'mus': arms_thetas, 'query_cost': query_cost, 'horizon': T, 'regret': regret,
+             'chosen_arm': action, 'query_ind': query_ind, 'reward': r})
+
     return chosen_arms, rewards, query_inds, regrets
 
 
@@ -47,28 +52,20 @@ if __name__ == "__main__":
     parser.add_argument('--exploration_const', type=float, default=5., metavar='')  # TODO: optimize?
     parser.add_argument('--max_simulations', type=int, default=100, metavar='')  # TODO: maybe can be higher?
     parser.add_argument('--arms_thetas', type=tuple, default=(0.2, 0.8), metavar='')  # According to BAMCP++ paper
-    parser.add_argument('--horizon', type=int, default=30, metavar='')
     parser.add_argument('--runs', type=int, default=100, metavar='')
     parser.add_argument('--delayed_tree_expansion', type=int, default=0, metavar='')  # TODO: optimize?
 
     args = parser.parse_args()
-    assert args.horizon > args.delayed_tree_expansion + 1
 
-    for i, query_cost in enumerate((0, 0.3, 0.5, 1, 100)):
-        k = i
-        recorder = {'run': [], 'query_cost': [], 'chosen_arm': [], 'reward': [], 'query_ind': [], 'regret': []}
-        print(f'Starting cost = {query_cost}')
-        for run in tqdm(range(args.runs)):
-            chosen_arms, rewards, query_inds, regrets = BAMCP_PP(args.horizon, args.learning_rate, args.discount_factor,
-                                                                 query_cost,
-                                                                 args.exploration_const, args.max_simulations,
-                                                                 args.arms_thetas, args.delayed_tree_expansion)
-            recorder['run'].extend([run] * args.horizon)
-            recorder['query_cost'].extend([query_cost] * args.horizon)
-            recorder['chosen_arm'].extend(chosen_arms)
-            recorder['reward'].extend(rewards)
-            recorder['query_ind'].extend(query_inds)
-            recorder['regret'].extend(regrets)
-
-        df = pd.DataFrame(recorder)
-        df.to_csv(f'./records_q_per_node/record_q_per_node_{k}.csv')
+    with open('./test_record.csv', 'w', newline='') as csvfile:
+        fieldnames = ['run', 'timestep', 'mus', 'query_cost', 'horizon', 'regret', 'chosen_arm', 'query_ind', 'reward']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for horizon in (10, 20, 30, 40, 50):
+            for query_cost in (0, 0.3, 0.5, 1, 100):
+                print(f'Starting cost = {query_cost}')
+                for run in tqdm(range(args.runs)):
+                    chosen_arms, rewards, query_inds, regrets = BAMCP_PP(writer, run, horizon, args.learning_rate, args.discount_factor,
+                                                                         query_cost,
+                                                                         args.exploration_const, args.max_simulations,
+                                                                         args.arms_thetas, args.delayed_tree_expansion)
