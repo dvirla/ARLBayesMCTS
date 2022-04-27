@@ -62,7 +62,7 @@ if __name__ == "__main__":
         writer.writeheader()
         for horizon in (10, 20, 30, 40, 50):
             for query_cost in (0, 0.3, 0.5, 1, 100):
-                print(f'Starting cost = {query_cost}')
+                print(f'Horizon = {horizon} and cost = {query_cost}')
                 for run in tqdm(range(args.runs)):
                     chosen_arms, rewards, query_inds, regrets = BAMCP_PP(writer, run, horizon, args.learning_rate, args.discount_factor,
                                                                          query_cost,
