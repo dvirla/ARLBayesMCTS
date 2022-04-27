@@ -1,7 +1,6 @@
 import argparse
 from MCTS import MCTree
 from scipy.stats import bernoulli
-import pandas as pd
 from tqdm import tqdm
 import numpy as np
 import csv
