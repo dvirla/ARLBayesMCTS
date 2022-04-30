@@ -60,8 +60,8 @@ if __name__ == "__main__":
         fieldnames = ['run', 'timestep', 'mus', 'query_cost', 'horizon', 'regret', 'chosen_arm', 'query_ind', 'reward']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
-        for horizon in (10, 20, 30, 40, 50):
-            for query_cost in (0, 0.3, 0.5, 1, 100):
+        for horizon in [50]: #(10, 20, 30, 40, 50):
+            for query_cost in [0.5]: #(0, 0.3, 0.5, 1, 100):
                 print(f'Horizon = {horizon} and cost = {query_cost}')
                 for run in tqdm(range(args.runs)):
                     chosen_arms, rewards, query_inds, regrets = BAMCP_PP(writer, run, horizon, args.learning_rate, args.discount_factor,
