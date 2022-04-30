@@ -6,7 +6,13 @@ import numpy as np
 import csv
 
 
-def BAMCP_PP(writer, run, T, learning_rate, discount_factor, query_cost, exploration_const, max_simulations,
+def write_csv(writer, run, t, arms_thetas, query_cost, T, regret, action, query_ind, r):
+    writer.writerow(
+        {'run': run, 'timestep': t, 'mus': arms_thetas, 'query_cost': query_cost, 'horizon': T, 'regret': regret,
+         'chosen_arm': action, 'query_ind': query_ind, 'reward': r})
+
+
+def BAMCP_PP(writer_func, writer, run, T, learning_rate, discount_factor, query_cost, exploration_const, max_simulations,
              arms_thetas: tuple, delayed_tree_expansion):
     """
     :param T: Horizon
@@ -36,9 +42,7 @@ def BAMCP_PP(writer, run, T, learning_rate, discount_factor, query_cost, explora
         query_inds.append(query_ind)
         regrets.append(regret)
 
-        writer.writerow(
-            {'run': run, 'timestep': t, 'mus': arms_thetas, 'query_cost': query_cost, 'horizon': T, 'regret': regret,
-             'chosen_arm': action, 'query_ind': query_ind, 'reward': r})
+        writer_func(writer, run, t, arms_thetas, query_cost, T, regret, action, query_ind, r)
 
     return chosen_arms, rewards, query_inds, regrets
 
@@ -52,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument('--max_simulations', type=int, default=100, metavar='')  # TODO: maybe can be higher?
     parser.add_argument('--arms_thetas', type=tuple, default=(0.2, 0.8), metavar='')  # According to BAMCP++ paper
     parser.add_argument('--runs', type=int, default=100, metavar='')
-    parser.add_argument('--delayed_tree_expansion', type=int, default=0, metavar='')  # TODO: optimize?
+    parser.add_argument('--delayed_tree_expansion', type=int, default=5, metavar='')  # TODO: optimize?
 
     args = parser.parse_args()
 
@@ -64,7 +68,8 @@ if __name__ == "__main__":
             for query_cost in [0.5]: #(0, 0.3, 0.5, 1, 100):
                 print(f'Horizon = {horizon} and cost = {query_cost}')
                 for run in tqdm(range(args.runs)):
-                    chosen_arms, rewards, query_inds, regrets = BAMCP_PP(writer, run, horizon, args.learning_rate, args.discount_factor,
+                    chosen_arms, rewards, query_inds, regrets = BAMCP_PP(write_csv, writer, run, horizon,
+                                                                         args.learning_rate, args.discount_factor,
                                                                          query_cost,
                                                                          args.exploration_const, args.max_simulations,
                                                                          args.arms_thetas, args.delayed_tree_expansion)

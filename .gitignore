@@ -3,3 +3,4 @@ images*
 records*
 *pycache*
 wandb*
+*.csv
