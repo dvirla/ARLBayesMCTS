@@ -36,7 +36,7 @@ if __name__ == "__main__":
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         func_args = []
-        for horizon in (10, 20, 30, 40, 50):
+        for horizon in [60]:  #(10, 20, 30, 40, 50):
             for query_cost in [0.5]:  #(0, 0.3, 0.5, 1, 100):
                 for run in range(args.runs):
                     func_args.append((parallel_write, writer, run, horizon,
