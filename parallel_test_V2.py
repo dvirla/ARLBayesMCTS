@@ -79,11 +79,11 @@ if __name__ == "__main__":
     for horizon in [60]:  # (10, 20, 30, 40, 50):
         for query_cost in [0.5]:  # (0, 0.3, 0.5, 1, 100):
             for run in range(args.runs):
-                func_args.append((seed, parallel_write, writer_path, run, horizon,
+                func_args.append((parallel_write, writer_path, run, horizon,
                                   args.learning_rate, args.discount_factor,
                                   query_cost,
                                   args.exploration_const, args.max_simulations,
-                                  args.arms_thetas, args.delayed_tree_expansion))
+                                  args.arms_thetas, args.delayed_tree_expansion, seed))
                 seed += 1
 
     num_tasks = len(func_args)
