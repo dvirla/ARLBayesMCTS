@@ -1,5 +1,4 @@
 import argparse
-from tqdm import tqdm
 import csv
 import threading
 import multiprocessing as mp
@@ -7,28 +6,32 @@ from MCTS_V2 import MCTree
 import numpy as np
 from scipy.stats import bernoulli
 from multiprocessing import Pool
+import random
 
 # create the lock
 csv_writer_lock = threading.Lock()
 
 
-def parallel_write(writer_path, run, t, arms_thetas, query_cost, T, regret, action, query_ind, r):
+def parallel_write(writer_path, run, t, arms_thetas, query_cost, T, regret, action, query_ind, r, seed):
     with open(writer_path, 'a', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writerow(
             {'run': run, 'timestep': t, 'mus': arms_thetas, 'query_cost': query_cost, 'horizon': T, 'regret': regret,
-             'chosen_arm': action, 'query_ind': query_ind, 'reward': r})
+             'chosen_arm': action, 'query_ind': query_ind, 'reward': r, 'seed': seed})
 
 
 def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, query_cost, exploration_const,
              max_simulations,
-             arms_thetas: tuple, delayed_tree_expansion):
+             arms_thetas: tuple, delayed_tree_expansion, seed):
     """
     :param T: Horizon
     :param learning_rate: for Q values
     :param discount_factor: for Q values
     :param query_cost: fixed query cost for Q values
     """
+    random.seed(seed)
+    np.random.seed(seed)
+
     actions_history = tuple([])
     regret = 0
     Q = np.random.randn(2, 2)
@@ -47,7 +50,7 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, q
 
         regret += arms_thetas[action] - r
         with csv_writer_lock:
-            writer_func(writer_path, run, t, arms_thetas, query_cost, T, regret, action, query_ind, r)
+            writer_func(writer_path, run, t, arms_thetas, query_cost, T, regret, action, query_ind, r, seed)
 
 
 if __name__ == "__main__":
@@ -67,19 +70,21 @@ if __name__ == "__main__":
 
     writer_path = './test_record.csv'
     with open(writer_path, 'w', newline='') as csvfile:
-        fieldnames = ['run', 'timestep', 'mus', 'query_cost', 'horizon', 'regret', 'chosen_arm', 'query_ind', 'reward']
+        fieldnames = ['run', 'timestep', 'mus', 'query_cost', 'horizon', 'regret', 'chosen_arm', 'query_ind', 'reward', 'seed']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
     func_args = []
+    seed = 0
     for horizon in [60]:  # (10, 20, 30, 40, 50):
         for query_cost in [0.5]:  # (0, 0.3, 0.5, 1, 100):
             for run in range(args.runs):
-                func_args.append((parallel_write, writer_path, run, horizon,
+                func_args.append((seed, parallel_write, writer_path, run, horizon,
                                   args.learning_rate, args.discount_factor,
                                   query_cost,
                                   args.exploration_const, args.max_simulations,
                                   args.arms_thetas, args.delayed_tree_expansion))
+                seed += 1
 
     num_tasks = len(func_args)
     with Pool(num_workers) as p:
