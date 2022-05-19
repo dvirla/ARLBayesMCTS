@@ -69,7 +69,7 @@ if __name__ == "__main__":
                         metavar='')  # No learning rate according to both papers
     parser.add_argument('--discount_factor', type=float, default=0.95, metavar='')  # According to original BAMCP paper
     parser.add_argument('--query_cost', type=float, default=0.5, metavar='')  # According to BAMCP++ paper
-    parser.add_argument('--exploration_const', type=float, default=1., metavar='')
+    parser.add_argument('--exploration_const', type=float, default=1, metavar='')
     parser.add_argument('--max_simulations', type=int, default=10000, metavar='')
     parser.add_argument('--arms_thetas', type=tuple, default=(0.2, 0.8), metavar='')  # According to BAMCP++ paper
     parser.add_argument('--runs', type=int, default=100, metavar='')
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     num_workers = mp.cpu_count()
 
     writer_path = './test_record_{0}_sim_{1}_exp_{2}_runs_{3}_tree.csv'.format(args.max_simulations,
-                                                                               args.exploration_const,
+                                                                               ''.join(f'{args.exploration_const}'.split('.')),
                                                                                args.runs,
                                                                                args.delayed_tree_expansion)
     with open(writer_path, 'w', newline='') as csvfile:
