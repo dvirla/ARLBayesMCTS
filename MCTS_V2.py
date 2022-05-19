@@ -34,7 +34,8 @@ class MCTSNode:
 
 
 class MCTree:
-    def __init__(self, actions_history, learning_rate, discount_factor, query_cost, exploration_const):
+    def __init__(self, actions_history, learning_rate, discount_factor, base_query_cost, increase_factor,
+                 decrease_factor, exploration_const):
         """
         :param history: A tuple (in order to be hashable) of triplets (action, query_ind, reward)
         """
@@ -42,7 +43,10 @@ class MCTree:
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
         self.Q = np.random.randn(2, 2)  # 2 arms and 2 queries indicators
-        self.query_cost = query_cost
+        self.base_query_cost = base_query_cost
+        self.query_cost = base_query_cost
+        self.increase_factor = increase_factor
+        self.decrease_factor = decrease_factor
         self.exploration_const = exploration_const
         self.arms_dicts = [{'succ': 0, 'fails': 0}, {'succ': 0, 'fails': 0}]
 
@@ -81,6 +85,15 @@ class MCTree:
         a_q = np.random.multinomial(1, probs)  # action = flattened array of 0's and 1 in desired action index
         return np.unravel_index(np.argmax(a_q, axis=None), a_q.shape)[0]
 
+    def get_query_cost(self, query_ind, update=False, query_cost=None):
+        if query_cost is None:
+            query_cost = self.query_cost
+        query_cost = query_ind * query_cost * self.increase_factor + \
+                     (1 - query_ind) * max(query_cost * self.decrease_factor, self.base_query_cost)
+        if update:
+            self.query_cost = query_cost
+        return query_cost
+
     def tree_search(self, Q_M, max_depth, root, max_simulations=1):
         if root is None:
             root = self.root
@@ -90,12 +103,16 @@ class MCTree:
             _ = self.simulate(root, Q_pi, P_bernoullis, max_depth, curr_d=0)
 
         action, query_ind = root.get_argmax()
+        _ = self.get_query_cost(query_ind, update=True)
 
         return action, query_ind, root.children[(action, query_ind)]
 
-    def simulate(self, node, Q_pi, P_bernoullis, max_depth, curr_d):
+    def simulate(self, node, Q_pi, P_bernoullis, max_depth, curr_d, query_cost=None):
         if curr_d == max_depth:
             return 0
+
+        if query_cost is None:
+            query_cost = self.query_cost
 
         # Rollout
         if node.N == 0:
@@ -103,7 +120,7 @@ class MCTree:
             query_ind = 0
             action = self.pi_rollout(Q_pi)
             r = P_bernoullis[action].rvs()  # P(;|a,theta)
-            R = r + self.rollout(Q_pi, P_bernoullis, max_depth, curr_d + 1)  # TODO: multiply by discount factor?
+            R = r + self.rollout(Q_pi, P_bernoullis, max_depth, curr_d + 1)
 
             node.N = 1
             node.N_per_action[action, query_ind] = 1
@@ -115,10 +132,12 @@ class MCTree:
         r = P_bernoullis[action].rvs()  # P(;|a,theta)
         next_node = node.children[(action, query_ind)]
 
+        query_cost = self.get_query_cost(query_ind, False, query_cost)
+
         if query_ind == 0:
-            R = r + self.simulate(next_node, Q_pi, P_bernoullis, max_depth, curr_d + 1)
+            R = r + self.simulate(next_node, Q_pi, P_bernoullis, max_depth, curr_d + 1, query_cost)
         else:
-            R = r + self.simulate(next_node, Q_pi, P_bernoullis, max_depth, curr_d + 1) - self.query_cost
+            R = r + self.simulate(next_node, Q_pi, P_bernoullis, max_depth, curr_d + 1, query_cost) - query_cost
             # Update Q values for rollout policy
             self.q_update(Q_pi, action, query_ind, r)
             # Update rewards history for bayesian update
@@ -126,7 +145,8 @@ class MCTree:
 
         node.N += 1
         node.N_per_action[action, query_ind] += 1
-        node.Q_per_action[action, query_ind] += (R - node.Q_per_action[action, query_ind]) / node.N_per_action[action, query_ind]
+        node.Q_per_action[action, query_ind] += (R - node.Q_per_action[action, query_ind]) / node.N_per_action[
+            action, query_ind]
         return R
 
     def rollout(self, Q_pi, P_bernoullis, max_depth, curr_d):
@@ -141,4 +161,5 @@ class MCTree:
         assert action in (0, 1)
         assert reward in (0, 1, None)
         old_val = Q_pi[action, query_ind]
-        Q_pi[action, query_ind] += self.learning_rate * (reward - old_val - self.query_cost + self.discount_factor * max(Q_pi[action, :]))
+        Q_pi[action, query_ind] += self.learning_rate * (
+                reward - old_val - self.query_cost + self.discount_factor * max(Q_pi[action, :]))
