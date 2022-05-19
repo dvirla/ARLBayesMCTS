@@ -78,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument('--decrease_factor', type=float, default=0.5, metavar='')
 
     args = parser.parse_args()
-    num_workers = mp.cpu_count()
+    num_workers = max(mp.cpu_count() - 18, 4)
 
     writer_path = './test_record_{0}_sim_{1}_exp_{2}_runs_{3}_tree.csv'.format(args.max_simulations,
                                                                                ''.join(f'{args.exploration_const}'.split('.')),
