@@ -5,3 +5,5 @@ records*
 wandb*
 *.csv
 *.png
+backup*
+backup/*

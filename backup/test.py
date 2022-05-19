@@ -1,5 +1,5 @@
 import argparse
-from MCTS import MCTree
+from backup.MCTS import MCTree
 from scipy.stats import bernoulli
 from tqdm import tqdm
 import numpy as np
