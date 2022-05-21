@@ -58,7 +58,7 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
         new_history.append((action, query_ind))
         actions_history = tuple(new_history)
 
-        regret += arms_thetas[action] - r
+        regret += max(arms_thetas) - r
         with csv_writer_lock:
             writer_func(writer_path, run, t, arms_thetas, base_query_cost, mctree.query_cost, T, regret, action, query_ind, r, seed)
 
