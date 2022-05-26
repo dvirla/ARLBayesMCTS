@@ -68,16 +68,17 @@ if __name__ == "__main__":
     parser.add_argument('--learning_rate', type=float, default=1.,
                         metavar='')  # No learning rate according to both papers
     parser.add_argument('--discount_factor', type=float, default=0.95, metavar='')  # According to original BAMCP paper
-    parser.add_argument('--query_cost', type=float, default=0.5, metavar='')  # According to BAMCP++ paper
+    parser.add_argument('--query_cost', type=float, default=0., metavar='')  # According to BAMCP++ paper
     parser.add_argument('--exploration_const', type=float, default=1, metavar='')
     parser.add_argument('--max_simulations', type=int, default=10000, metavar='')
-    parser.add_argument('--arms_thetas', type=tuple, default=(0.2, 0.8), metavar='')  # According to BAMCP++ paper
+    parser.add_argument('--arms_thetas', type=tuple, default=(0., 1.), metavar='')  # According to BAMCP++ paper
     parser.add_argument('--runs', type=int, default=100, metavar='')
     parser.add_argument('--delayed_tree_expansion', type=int, default=10, metavar='')
-    parser.add_argument('--increase_factor', type=float, default=2., metavar='')
-    parser.add_argument('--decrease_factor', type=float, default=0.5, metavar='')
+    parser.add_argument('--increase_factor', type=float, default=1., metavar='')
+    parser.add_argument('--decrease_factor', type=float, default=1., metavar='')
 
     args = parser.parse_args()
+    print(args.arms_thetas)
     num_workers = max(mp.cpu_count() - 18, 4)
 
     writer_path = './test_record_{0}_sim_{1}_exp_{2}_runs_{3}_tree.csv'.format(args.max_simulations,

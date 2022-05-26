@@ -5,8 +5,8 @@ class BayesBeta:
     def __init__(self, arm, a=0.5, b=0.5):
         assert arm == 0 or arm == 1
         self.arm = arm
-        self.a = a
-        self.b = b
+        self.a = a + 0.5
+        self.b = b + 0.5
         if a == 0:
             self.a = 0.5
         if b == 0:
