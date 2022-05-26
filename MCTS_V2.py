@@ -49,6 +49,8 @@ class MCTree:
         self.decrease_factor = decrease_factor
         self.exploration_const = exploration_const
         self.arms_dicts = [{'succ': 0, 'fails': 0}, {'succ': 0, 'fails': 0}]
+        self.bayes_params_dict = {'a': [], 'b': [], 'p_0': [], 'p_1': []}
+        self.Q_vals_dict = {(0, 0): [], (0, 1): [], (1, 0): [], (1, 1): []}
 
     def get_arm_dict(self, arm):
         d = self.arms_dicts[arm]
@@ -73,6 +75,11 @@ class MCTree:
             b_i = d['fails']
             theta = BayesBeta(arm=i, a=a_i, b=b_i).sample()
             P_bernoullis.append(bernoulli(theta))
+            self.bayes_params_dict['a'].append(a_i)
+            self.bayes_params_dict['b'].append(b_i)
+
+        self.bayes_params_dict['p_0'].append(P_bernoullis[0])
+        self.bayes_params_dict['p_1'].append(P_bernoullis[1])
         return P_bernoullis
 
     @staticmethod
@@ -157,9 +164,15 @@ class MCTree:
         R = r + self.rollout(Q_pi, P_bernoullis, max_depth, curr_d + 1)
         return R
 
-    def q_update(self, Q_pi, action, query_ind, reward):
+    def q_update(self, Q_pi, action, query_ind, reward, log_dict=None):
         assert action in (0, 1)
         assert reward in (0, 1, None)
         old_val = Q_pi[action, query_ind]
         Q_pi[action, query_ind] += self.learning_rate * (
                 reward - old_val - self.query_cost + self.discount_factor * max(Q_pi[action, :]))
+        if log_dict is None:
+            log_dict = self.Q_vals_dict
+        log_dict[(action, query_ind)].append(Q_pi[action, query_ind])
+        for a, q_ind in product((0, 1), (0, 1)):
+            if a != action and q_ind != query_ind:
+                log_dict[(a, q_ind)].append(Q_pi[a, q_ind])

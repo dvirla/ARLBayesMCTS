@@ -7,12 +7,14 @@ import numpy as np
 from scipy.stats import bernoulli
 from multiprocessing import Pool
 import random
+import pandas as pd
 
 # create the lock
 csv_writer_lock = threading.Lock()
 
 
-def parallel_write(writer_path, run, t, arms_thetas, base_query_cost, query_cost, T, regret, action, query_ind, r, seed):
+def parallel_write(writer_path, run, t, arms_thetas, base_query_cost, query_cost, T, regret, action, query_ind, r,
+                   seed):
     with open(writer_path, 'a', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writerow(
@@ -44,6 +46,8 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
     actions_history = tuple([])
     regret = 0
     Q = np.random.randn(2, 2)
+    Q_vals_dict = {(0, 0): [], (0, 1): [], (1, 0): [], (1, 1): []}
+
     mctree = MCTree(actions_history, learning_rate, discount_factor, base_query_cost, increase_factor, decrease_factor,
                     exploration_const)
     node = None
@@ -52,7 +56,7 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
                                                      max_simulations=max_simulations)
         r = bernoulli(arms_thetas[action]).rvs()
         if query_ind:
-            mctree.q_update(Q, action, query_ind, r)
+            mctree.q_update(Q, action, query_ind, r, log_dict=Q_vals_dict)
 
         new_history = list(actions_history)
         new_history.append((action, query_ind))
@@ -60,7 +64,34 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
 
         regret += max(arms_thetas) - r
         with csv_writer_lock:
-            writer_func(writer_path, run, t, arms_thetas, base_query_cost, mctree.query_cost, T, regret, action, query_ind, r, seed)
+            writer_func(writer_path, run, t, arms_thetas, base_query_cost, mctree.query_cost, T, regret, action,
+                        query_ind, r, seed)
+
+    MCTS_Q_vals_df = pd.DataFrame(mctree.Q_vals_dict.values(), columns=['(0,0)', '(0,1)', '(1,0)', '(1,1)'])
+    BAMCP_Q_vals_df = pd.DataFrame(Q_vals_dict.values(), columns=['(0,0)', '(0,1)', '(1,0)', '(1,1)'])
+    bayes_params_df = pd.DataFrame(mctree.bayes_params_dict)
+
+    MCTS_Q_path = './MCTS_Q_vals/run_{0}_{1}_sim_{2}_exp_{3}_runs_{4}_tree.csv'.format(run, args.max_simulations,
+                                                                                       ''.join(
+                                                                                           f'{args.exploration_const}'.split(
+                                                                                               '.')),
+                                                                                       args.runs,
+                                                                                       args.delayed_tree_expansion)
+    BAMCP_Q_path = './BAMCP_Q_vals/run_{0}_{1}_sim_{2}_exp_{3}_runs_{4}_tree.csv'.format(run, args.max_simulations,
+                                                                                         ''.join(
+                                                                                             f'{args.exploration_const}'.split(
+                                                                                                 '.')),
+                                                                                         args.runs,
+                                                                                         args.delayed_tree_expansion)
+    bayes_params_path = './bayes_params/run_{0}_{1}_sim_{2}_exp_{3}_runs_{4}_tree.csv'.format(run, args.max_simulations,
+                                                                                              ''.join(
+                                                                                                  f'{args.exploration_const}'.split(
+                                                                                                      '.')),
+                                                                                              args.runs,
+                                                                                              args.delayed_tree_expansion)
+    MCTS_Q_vals_df.to_csv(MCTS_Q_path)
+    BAMCP_Q_vals_df.to_csv(BAMCP_Q_path)
+    bayes_params_df.to_csv(bayes_params_path)
 
 
 if __name__ == "__main__":
@@ -71,6 +102,7 @@ if __name__ == "__main__":
     parser.add_argument('--query_cost', type=float, default=0., metavar='')  # According to BAMCP++ paper
     parser.add_argument('--exploration_const', type=float, default=1, metavar='')
     parser.add_argument('--max_simulations', type=int, default=10000, metavar='')
+    parser.add_argument('--horizon', type=int, default=500, metavar='')
     parser.add_argument('--arms_thetas', type=tuple, default=(0., 1.), metavar='')  # According to BAMCP++ paper
     parser.add_argument('--runs', type=int, default=100, metavar='')
     parser.add_argument('--delayed_tree_expansion', type=int, default=10, metavar='')
@@ -82,7 +114,9 @@ if __name__ == "__main__":
     num_workers = max(mp.cpu_count() - 18, 4)
 
     writer_path = './test_record_{0}_sim_{1}_exp_{2}_runs_{3}_tree.csv'.format(args.max_simulations,
-                                                                               ''.join(f'{args.exploration_const}'.split('.')),
+                                                                               ''.join(
+                                                                                   f'{args.exploration_const}'.split(
+                                                                                       '.')),
                                                                                args.runs,
                                                                                args.delayed_tree_expansion)
     with open(writer_path, 'w', newline='') as csvfile:
@@ -93,7 +127,7 @@ if __name__ == "__main__":
 
     func_args = []
     seed = 0
-    horizon = 500
+    horizon = args.horizon
     base_query_cost = 1
     for run in range(args.runs):
         func_args.append((parallel_write, writer_path, run, horizon,
