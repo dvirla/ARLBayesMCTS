@@ -1,5 +1,6 @@
 import argparse
 import csv
+import pickle
 import threading
 import multiprocessing as mp
 from MCTS_V2 import MCTree
@@ -100,12 +101,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--learning_rate', type=float, default=1.,
                         metavar='')  # No learning rate according to both papers
-    parser.add_argument('--discount_factor', type=float, default=0.95, metavar='')  # According to original BAMCP paper
-    parser.add_argument('--query_cost', type=float, default=0., metavar='')  # According to BAMCP++ paper
+    parser.add_argument('--discount_factor', type=float, default=0.95, metavar='')
+    parser.add_argument('--base_query_cost', type=float, default=0., metavar='')
     parser.add_argument('--exploration_const', type=float, default=1, metavar='')
     parser.add_argument('--max_simulations', type=int, default=1000, metavar='')
     parser.add_argument('--horizon', type=int, default=500, metavar='')
-    parser.add_argument('--arms_thetas', type=tuple, default=(0.2, 0.8), metavar='')  # According to BAMCP++ paper
+    parser.add_argument('--arms_thetas', type=tuple, default=(0.2, 0.8), metavar='')
     parser.add_argument('--runs', type=int, default=1, metavar='')
     parser.add_argument('--delayed_tree_expansion', type=int, default=10, metavar='')
     parser.add_argument('--increase_factor', type=float, default=2., metavar='')
@@ -118,10 +119,13 @@ if __name__ == "__main__":
         exp_const = ''.join(exp_const[:-1])
     else:
         exp_const = ''.join(exp_const)
-    writer_path = './test_record_{0}_sim_{1}_exp_{2}_runs_{3}_tree_svetas_setting.csv'.format(args.max_simulations,
+    writer_path = './records_tests/test_record_{0}_sim_{1}_exp_{2}_runs_{3}_tree.csv'.format(args.max_simulations,
                                                                                               exp_const,
                                                                                               args.runs,
                                                                                               args.delayed_tree_expansion)
+    with open(writer_path.split('.csv')[0]+'.pkl', 'wb') as f:
+        pickle.dump(args, f)
+
     with open(writer_path, 'w', newline='') as csvfile:
         fieldnames = ['run', 'timestep', 'mus', 'base_query_cost', 'query_cost', 'horizon', 'regret', 'chosen_arm',
                       'query_ind', 'reward', 'seed']
@@ -132,7 +136,7 @@ if __name__ == "__main__":
     func_args = []
     seed = 0
     horizon = args.horizon
-    base_query_cost = 1
+    base_query_cost = args.base_query_cost
     for run in range(args.runs):
         func_args.append((parallel_write, writer_path, run, horizon,
                           args.learning_rate, args.discount_factor,
