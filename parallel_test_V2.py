@@ -9,6 +9,7 @@ from scipy.stats import bernoulli
 from multiprocessing import Pool
 import random
 import pandas as pd
+from datetime import datetime
 
 # create the lock
 csv_writer_lock = threading.Lock()
@@ -119,10 +120,14 @@ if __name__ == "__main__":
         exp_const = ''.join(exp_const[:-1])
     else:
         exp_const = ''.join(exp_const)
-    writer_path = './records_tests/test_record_{0}_sim_{1}_exp_{2}_runs_{3}_tree.csv'.format(args.max_simulations,
+
+    now = datetime.now()
+    now = now.strftime("%m%d%Y%H%M%S")
+    writer_path = './records_tests/test_record_{0}_sim_{1}_exp_{2}_runs_{3}_tree_{4}.csv'.format(args.max_simulations,
                                                                                               exp_const,
                                                                                               args.runs,
-                                                                                              args.delayed_tree_expansion)
+                                                                                              args.delayed_tree_expansion,
+                                                                                                now)
     with open(writer_path.split('.csv')[0]+'.pkl', 'wb') as f:
         pickle.dump(args, f)
 
