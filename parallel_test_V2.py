@@ -48,7 +48,6 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
     actions_history = tuple([])
     regret = 0
     Q = np.random.randn(2, 2)
-    # Q_vals_dict = {(0, 0): [], (0, 1): [], (1, 0): [], (1, 1): []}
 
     mctree = MCTree(actions_history, learning_rate, discount_factor, base_query_cost, increase_factor, decrease_factor,
                     exploration_const)
@@ -70,32 +69,6 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
         with csv_writer_lock:
             writer_func(writer_path, run, t, arms_thetas, base_query_cost, mctree.query_cost, T, regret, action,
                         query_ind, r, seed)
-
-    # MCTS_Q_vals_df = pd.DataFrame(mctree.Q_vals_dict.values()).transpose().rename(columns={0: '(0,0)', 1: '(0,1)', 2: '(1,0)', 3: '(1,1)'}).round(4)
-    # BAMCP_Q_vals_df = pd.DataFrame(Q_vals_dict.values()).transpose().rename(columns={0: '(0,0)', 1: '(0,1)', 2: '(1,0)', 3: '(1,1)'}).round(4)
-    # bayes_params_df = pd.DataFrame(mctree.bayes_params_dict)
-
-    # MCTS_Q_path = './MCTS_Q_vals/run_{0}_{1}_sim_{2}_exp_{3}_runs_{4}_tree.csv'.format(run, args.max_simulations,
-    #                                                                                    ''.join(
-    #                                                                                        f'{args.exploration_const}'.split(
-    #                                                                                            '.')[:-1]),
-    #                                                                                    args.runs,
-    #                                                                                    args.delayed_tree_expansion)
-    # BAMCP_Q_path = './BAMCP_Q_vals/run_{0}_{1}_sim_{2}_exp_{3}_runs_{4}_tree.csv'.format(run, args.max_simulations,
-    #                                                                                      ''.join(
-    #                                                                                          f'{args.exploration_const}'.split(
-    #                                                                                              '.')[:-1]),
-    #                                                                                      args.runs,
-    #                                                                                      args.delayed_tree_expansion)
-    # bayes_params_path = './bayes_params/run_{0}_{1}_sim_{2}_exp_{3}_runs_{4}_tree.csv'.format(run, args.max_simulations,
-    #                                                                                           ''.join(
-    #                                                                                               f'{args.exploration_const}'.split(
-    #                                                                                                   '.')[:-1]),
-    #                                                                                           args.runs,
-    #                                                                                           args.delayed_tree_expansion)
-    # MCTS_Q_vals_df.to_csv(MCTS_Q_path)
-    # BAMCP_Q_vals_df.to_csv(BAMCP_Q_path)
-    # bayes_params_df.to_csv(bayes_params_path)
 
 
 if __name__ == "__main__":
