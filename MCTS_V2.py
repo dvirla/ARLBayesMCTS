@@ -25,7 +25,7 @@ class MCTSNode:
 
     def get_argmax(self, t=None, horizon=None):
         if t is not None and horizon is not None:
-            if t > 0.25 * horizon:
+            if t > 0.05 * horizon:
                 pass
             biased_Q = deepcopy(self.Q_per_action)
             biased_Q[:, 0] = biased_Q[:, 0]/(horizon - t)
