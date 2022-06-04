@@ -87,7 +87,7 @@ if __name__ == "__main__":
     parser.add_argument('--decrease_factor', type=float, default=0.5, metavar='')
 
     args = parser.parse_args()
-    num_workers = max(mp.cpu_count() - 18, 4)
+    num_workers = max(mp.cpu_count() - 40, 4)
     exp_const = str(args.exploration_const).split('.')
     if len(exp_const) > 1 and exp_const[-1] == "0":
         exp_const = ''.join(exp_const[:-1])
