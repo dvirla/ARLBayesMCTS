@@ -23,8 +23,14 @@ class MCTSNode:
             new_node = MCTSNode(tuple(new_history), parent=self)
             self.children[(action, query_ind)] = new_node
 
-    def get_argmax(self):
-        action, query_ind = np.unravel_index(np.argmax(self.Q_per_action, axis=None), self.Q_per_action.shape)
+    def get_argmax(self, t=None, horizon=None):
+        if t is not None and horizon is not None:
+            biased_Q = deepcopy(self.Q_per_action)
+            biased_Q[:, 0] = biased_Q[:, 0]/(horizon - t)
+            biased_Q[:, 1] = biased_Q[:, 1] / t
+            action, query_ind = np.unravel_index(np.argmax(biased_Q, axis=None), biased_Q.shape)
+        else:
+            action, query_ind = np.unravel_index(np.argmax(self.Q_per_action, axis=None), self.Q_per_action.shape)
         return action, query_ind
 
     def get_action_uct(self, exploration_const):
@@ -99,7 +105,7 @@ class MCTree:
             self.query_cost = query_cost
         return query_cost
 
-    def tree_search(self, Q_M, max_depth, root, max_simulations=1):
+    def tree_search(self, Q_M, max_depth, root, max_simulations=1, t=None, horizon=None):
         if root is None:
             root = self.root
         for _ in range(max_simulations):
@@ -107,7 +113,7 @@ class MCTree:
             P_bernoullis = self.init_dist_params()
             _ = self.simulate(root, Q_pi, P_bernoullis, max_depth, curr_d=0)
 
-        action, query_ind = root.get_argmax()
+        action, query_ind = root.get_argmax(t, horizon)
         _ = self.get_query_cost(query_ind, update=True)
 
         return action, query_ind, root.children[(action, query_ind)]

@@ -54,7 +54,7 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
     node = None
     for t in range(T):
         action, query_ind, node = mctree.tree_search(Q.copy(), max_depth=delayed_tree_expansion, root=node,
-                                                     max_simulations=max_simulations)
+                                                     max_simulations=max_simulations, t=t, horizon=T)
         r = bernoulli(arms_thetas[action]).rvs()
         if query_ind:
             mctree.q_update(Q, action, query_ind, r)  # , log_dict=Q_vals_dict
