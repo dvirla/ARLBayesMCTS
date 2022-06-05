@@ -25,12 +25,14 @@ class MCTSNode:
 
     def get_argmax(self, t=None, horizon=None):
         if t is not None and horizon is not None:
-            if t > 0.05 * horizon:
-                pass
-            biased_Q = deepcopy(self.Q_per_action)
-            biased_Q[:, 0] = biased_Q[:, 0]/(horizon - t)
-            biased_Q[:, 1] = biased_Q[:, 1] / t
-            action, query_ind = np.unravel_index(np.argmax(biased_Q, axis=None), biased_Q.shape)
+            print("t: ", t, "hor: ", horizon)
+            if t > 0.25 * horizon:
+                action, query_ind = np.unravel_index(np.argmax(self.Q_per_action, axis=None), self.Q_per_action.shape)
+            else:
+                biased_Q = deepcopy(self.Q_per_action)
+                biased_Q[:, 0] = biased_Q[:, 0]/(horizon - t)
+                biased_Q[:, 1] = biased_Q[:, 1] / t
+                action, query_ind = np.unravel_index(np.argmax(biased_Q, axis=None), biased_Q.shape)
             return action, query_ind
 
         action, query_ind = np.unravel_index(np.argmax(self.Q_per_action, axis=None), self.Q_per_action.shape)
