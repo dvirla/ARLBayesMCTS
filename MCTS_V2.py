@@ -25,7 +25,7 @@ class MCTSNode:
 
     def get_argmax(self, t=None, horizon=None):
         if t is not None and horizon is not None:
-            if t > 0.25 * horizon:
+            if t > 0.02 * horizon:
                 action, query_ind = np.unravel_index(np.argmax(self.Q_per_action, axis=None), self.Q_per_action.shape)
             else:
                 biased_Q = deepcopy(self.Q_per_action)
