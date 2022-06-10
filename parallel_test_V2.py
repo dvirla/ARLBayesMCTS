@@ -103,8 +103,8 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
             writer_func(writer_path, run, t, arms_thetas, base_query_cost, mctree.query_cost, T, regret, action,
                         query_ind, r, seed)
 
-    df = pd.DataFrame(arms_p_confidences_history)
-    df.to_csv("./conf_values/{0}_{1}".format(run, writer_path.split("records_tests/")[1]), index=False)
+    #df = pd.DataFrame(arms_p_confidences_history)
+    #df.to_csv("./conf_values/{0}_{1}".format(run, writer_path.split("records_tests/")[1]), index=False)
 
 
 if __name__ == "__main__":

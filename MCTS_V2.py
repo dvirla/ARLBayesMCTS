@@ -28,8 +28,8 @@ class MCTSNode:
             if t > 0.02 * horizon:
                 if arms_p_confidences is not None:
                     biased_Q = deepcopy(self.Q_per_action)
-                    biased_Q[0, :] = biased_Q[0, :] / arms_p_confidences[0] if 0 < arms_p_confidences[0] < float("inf") else biased_Q[0, :]
-                    biased_Q[1, :] = biased_Q[1, :] / arms_p_confidences[1] if 0 < arms_p_confidences[1] < float("inf") else biased_Q[1, :]
+                    biased_Q[:, 0] = biased_Q[:, 0] / arms_p_confidences[0] if 0 < arms_p_confidences[0] < float("inf") else biased_Q[:, 0]
+                    biased_Q[:, 1] = biased_Q[:, 1] / arms_p_confidences[1] if 0 < arms_p_confidences[1] < float("inf") else biased_Q[:, 1]
                     action, query_ind = np.unravel_index(np.argmax(biased_Q, axis=None), biased_Q.shape)
                 else:
                     action, query_ind = np.unravel_index(np.argmax(self.Q_per_action, axis=None), self.Q_per_action.shape)
