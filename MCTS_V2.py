@@ -23,10 +23,18 @@ class MCTSNode:
             new_node = MCTSNode(tuple(new_history), parent=self)
             self.children[(action, query_ind)] = new_node
 
-    def get_argmax(self, t=None, horizon=None):
+    def get_argmax(self, t=None, horizon=None, arms_p_confidences=None):
         if t is not None and horizon is not None:
             if t > 0.02 * horizon:
-                action, query_ind = np.unravel_index(np.argmax(self.Q_per_action, axis=None), self.Q_per_action.shape)
+                if arms_p_confidences is not None:
+                    biased_Q = deepcopy(self.Q_per_action)
+                    biased_Q[0, :] = biased_Q[0, :] / arms_p_confidences[0] if 0 < arms_p_confidences[0] < float("inf") else biased_Q[0, :]
+                    biased_Q[1, :] = biased_Q[1, :] / arms_p_confidences[1] if 0 < arms_p_confidences[1] < float("inf") else biased_Q[1, :]
+                    action, query_ind = np.unravel_index(np.argmax(biased_Q, axis=None), biased_Q.shape)
+                else:
+                    action, query_ind = np.unravel_index(np.argmax(self.Q_per_action, axis=None), self.Q_per_action.shape)
+
+                return action, query_ind
             else:
                 biased_Q = deepcopy(self.Q_per_action)
                 biased_Q[:, 0] = biased_Q[:, 0]/(horizon - t)
@@ -82,7 +90,7 @@ class MCTree:
             d = self.get_arm_dict(i)
             a_i = d['succ']
             b_i = d['fails']
-            theta = BayesBeta(arm=i, a=a_i, b=b_i).sample()
+            theta = np.mean(BayesBeta(arm=i, a=a_i, b=b_i).sample(size=1000))
             P_bernoullis.append(bernoulli(theta))
             # self.bayes_params_dict['a_{0}'.format(i)].append(a_i)
             # self.bayes_params_dict['b_{0}'.format(i)].append(b_i)
@@ -109,7 +117,7 @@ class MCTree:
             self.query_cost = query_cost
         return query_cost
 
-    def tree_search(self, Q_M, max_depth, root, max_simulations=1, t=None, horizon=None):
+    def tree_search(self, Q_M, max_depth, root, max_simulations=1, t=None, horizon=None, arms_p_confidences=None):
         if root is None:
             root = self.root
         for _ in range(max_simulations):
@@ -117,7 +125,7 @@ class MCTree:
             P_bernoullis = self.init_dist_params()
             _ = self.simulate(root, Q_pi, P_bernoullis, max_depth, curr_d=0)
 
-        action, query_ind = root.get_argmax(t, horizon)
+        action, query_ind = root.get_argmax(t, horizon, arms_p_confidences)
         _ = self.get_query_cost(query_ind, update=True)
 
         return action, query_ind, root.children[(action, query_ind)]
