@@ -76,23 +76,34 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
     mctree = MCTree(actions_history, learning_rate, discount_factor, base_query_cost, increase_factor, decrease_factor,
                     exploration_const)
     arms_p_confidences = [float("inf"), float("inf")]
+    arms_p_means = [None, None]
     arms_p_confidences_history = {"arm_0": [], "arm_1": []}
+    converged = False
 
     node = None
     for t in range(T):
-        action, query_ind, node = mctree.tree_search(Q.copy(), max_depth=delayed_tree_expansion, root=node,
-                                                     max_simulations=max_simulations, t=t, horizon=T, arms_p_confidences=arms_p_confidences)
-        r = bernoulli(arms_thetas[action]).rvs()
-        if query_ind:
-            mctree.q_update(Q, action, query_ind, r)  # , log_dict=Q_vals_dict
-            # Update rewards history for bayesian update
-            mctree.update_arm_dict(action, r)
-            a_0, b_0, a_1, b_1 = get_a_b(mctree.arms_dicts)
-            new_0_mean = calc_mean_bernouli_param(a_0, b_0)
-            new_1_mean = calc_mean_bernouli_param(a_1, b_1)
-            arms_p_confidences = update_arms_conf(arms_p_confidences, new_0_mean, new_1_mean)
-            arms_p_confidences_history["arm_0"].append(arms_p_confidences[0])
-            arms_p_confidences_history["arm_1"].append(arms_p_confidences[1])
+        if arms_p_confidences[0] < 0.01 and arms_p_confidences[1] < 0.01:
+            action = np.argmax(arms_p_means)
+            query_ind = 0
+            r = bernoulli(arms_thetas[action]).rvs()
+            if not converged:
+                converged = True
+                print('Run {0} Converged'.format(run))
+        else:
+            action, query_ind, node = mctree.tree_search(Q.copy(), max_depth=delayed_tree_expansion, root=node,
+                                                         max_simulations=max_simulations, t=t, horizon=T, arms_p_confidences=None)
+            r = bernoulli(arms_thetas[action]).rvs()
+            if query_ind:
+                mctree.q_update(Q, action, query_ind, r)  # , log_dict=Q_vals_dict
+                # Update rewards history for bayesian update
+                mctree.update_arm_dict(action, r)
+                a_0, b_0, a_1, b_1 = get_a_b(mctree.arms_dicts)
+                new_0_mean = calc_mean_bernouli_param(a_0, b_0)
+                new_1_mean = calc_mean_bernouli_param(a_1, b_1)
+                arms_p_means = [new_0_mean, new_1_mean]
+                arms_p_confidences = update_arms_conf(arms_p_confidences, new_0_mean, new_1_mean)
+                arms_p_confidences_history["arm_0"].append(arms_p_confidences[0])
+                arms_p_confidences_history["arm_1"].append(arms_p_confidences[1])
 
         new_history = list(actions_history)
         new_history.append((action, query_ind))
