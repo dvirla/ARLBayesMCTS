@@ -18,5 +18,5 @@ class BayesBeta:
     def cdf(self, x):
         return beta.cdf(x, self.a, self.b)
 
-    def sample(self):
-        return beta.rvs(self.a, self.b)
+    def sample(self, size=1):
+        return beta.rvs(self.a, self.b, size=size)
