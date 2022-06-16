@@ -85,7 +85,7 @@ if __name__ == "__main__":
     parser.add_argument('--exploration_const', type=float, default=1, metavar='')
     parser.add_argument('--max_simulations', type=int, default=1000, metavar='')
     parser.add_argument('--horizon', type=int, default=500, metavar='')
-    parser.add_argument('--arms_thetas', type=tuple, default=(0.2, 0.8), metavar='')
+    parser.add_argument('--arms_thetas', nargs='+', type=float, default=[0.2, 0.8], metavar='')
     parser.add_argument('--runs', type=int, default=1, metavar='')
     parser.add_argument('--delayed_tree_expansion', type=int, default=10, metavar='')
     parser.add_argument('--increase_factor', type=float, default=2., metavar='')
@@ -93,6 +93,10 @@ if __name__ == "__main__":
     parser.add_argument('--use_temperature', action='store_true')
 
     args = parser.parse_args()
+    print(args.arms_thetas)
+    args.arms_thetas = tuple(args.arms_thetas)
+    print(args.arms_thetas)
+    exit(0)
     num_workers = max(mp.cpu_count() - 40, 4)
     exp_const = str(args.exploration_const).split('.')
     if len(exp_const) > 1 and exp_const[-1] == "0":

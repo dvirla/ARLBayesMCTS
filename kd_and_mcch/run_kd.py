@@ -7,7 +7,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--base_query_cost', type=float, default=1., metavar='')
     parser.add_argument('--horizon', type=int, default=500, metavar='')
-    parser.add_argument('--arms_thetas', type=tuple, default=(0.2, 0.8), metavar='')
+    parser.add_argument('--arms_thetas', nargs='+', type=float, default=[0.2, 0.8], metavar='')
     parser.add_argument('--runs', type=int, default=100, metavar='')
     parser.add_argument('--increase_factor', type=float, default=2., metavar='')
     parser.add_argument('--decrease_factor', type=float, default=0.5, metavar='')
