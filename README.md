@@ -4,7 +4,7 @@ This project is based on the papers:
 * **[Active Reinforcement Learning with Monte-Carlo Tree Search](https://arxiv.org/pdf/1803.04926.pdf)** 
 * **[Efficient Bayes-Adaptive Reinforcement Learning using Sample-Based Search](https://papers.nips.cc/paper/2012/file/35051070e572e47d2c26c241ab88307f-Paper.pdf)**
 
-### Main objective:
+### Main objectives:
 * Attempting to find (sub)optimal policy in a two arm bandit configuration where rewards are only visible at a cost of querying, and transition function's parameters are unknown.
 * The algorithm from the mentioned paper was compared to knowledge gradient algorithm which was adjusted to the querying setting.
 * After discovering that BAMCPP (the algorithm from the articles) did not outperform KD, I adjusted it to have a temperature element in its MCTS' argmax stage.
