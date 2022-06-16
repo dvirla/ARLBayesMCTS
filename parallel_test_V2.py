@@ -26,7 +26,7 @@ def parallel_write(writer_path, run, t, arms_thetas, base_query_cost, query_cost
 
 
 def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, base_query_cost, exploration_const,
-             max_simulations, arms_thetas: tuple, delayed_tree_expansion, seed, increase_factor, decrease_factor):
+             max_simulations, arms_thetas: tuple, delayed_tree_expansion, seed, increase_factor, decrease_factor, use_temperature):
     """
     :param exploration_const: exploration constant for choosing next action during simulation via UCB.
     :param decrease_factor: decrease factor of the query cost
@@ -54,8 +54,12 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
 
     node = None
     for t in range(T):
-        action, query_ind, node = mctree.tree_search(Q.copy(), max_depth=delayed_tree_expansion, root=node,
-                                                     max_simulations=max_simulations, t=t, horizon=T)
+        if use_temperature:
+            action, query_ind, node = mctree.tree_search(Q.copy(), max_depth=delayed_tree_expansion, root=node,
+                                                         max_simulations=max_simulations, t=t, horizon=T)
+        else:
+            action, query_ind, node = mctree.tree_search(Q.copy(), max_depth=delayed_tree_expansion, root=node,
+                                                         max_simulations=max_simulations)
         r = bernoulli(arms_thetas[action]).rvs()
         if query_ind:
             mctree.q_update(Q, action, query_ind, r)  # , log_dict=Q_vals_dict
@@ -86,6 +90,7 @@ if __name__ == "__main__":
     parser.add_argument('--delayed_tree_expansion', type=int, default=10, metavar='')
     parser.add_argument('--increase_factor', type=float, default=2., metavar='')
     parser.add_argument('--decrease_factor', type=float, default=0.5, metavar='')
+    parser.add_argument('--use_temperature', action='store_true')
 
     args = parser.parse_args()
     num_workers = max(mp.cpu_count() - 40, 4)
@@ -122,7 +127,7 @@ if __name__ == "__main__":
                           base_query_cost,
                           args.exploration_const, args.max_simulations,
                           args.arms_thetas, args.delayed_tree_expansion, seed,
-                          args.increase_factor, args.decrease_factor))
+                          args.increase_factor, args.decrease_factor, args.use_temperature))
         seed += 1
 
     num_tasks = len(func_args)
