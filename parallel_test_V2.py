@@ -5,38 +5,14 @@ import threading
 import multiprocessing as mp
 from MCTS_V2 import MCTree
 import numpy as np
-from scipy.stats import bernoulli, beta
+from scipy.stats import bernoulli
 from multiprocessing import Pool
 import random
-import pandas as pd
 from datetime import datetime
-from copy import deepcopy
 
 
 # create the lock
 csv_writer_lock = threading.Lock()
-
-
-def calc_mean_bernouli_param(a, b):
-    samples = beta.rvs(a, b, size=10000)
-    samples_mean = np.mean(samples)
-    return samples_mean
-
-
-def get_a_b(arms_dict):
-    params = [None] * 4
-    for i in range(2):  # theta for each of the two arms
-        d = arms_dict[i]
-        params[i*2] = d['succ'] + 0.5
-        params[i*2 + 1] = d['fails'] + 0.5
-    return params
-
-
-def update_arms_conf(arms_p_confidences, new_0_mean, new_1_mean):
-    arms_p_confidences[0] = np.linalg.norm(arms_p_confidences[0] - new_0_mean) if arms_p_confidences[0] != float("inf") else new_0_mean
-    arms_p_confidences[1] = np.linalg.norm(arms_p_confidences[1] - new_1_mean) if arms_p_confidences[1] != float("inf") else new_1_mean
-
-    return arms_p_confidences
 
 
 def parallel_write(writer_path, run, t, arms_thetas, base_query_cost, query_cost, T, regret, action, query_ind, r,
@@ -75,35 +51,16 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
 
     mctree = MCTree(actions_history, learning_rate, discount_factor, base_query_cost, increase_factor, decrease_factor,
                     exploration_const)
-    arms_p_confidences = [float("inf"), float("inf")]
-    arms_p_means = [None, None]
-    arms_p_confidences_history = {"arm_0": [], "arm_1": []}
-    converged = False
 
     node = None
     for t in range(T):
-        if arms_p_confidences[0] < 0.01 and arms_p_confidences[1] < 0.01:
-            action = np.argmax(arms_p_means)
-            query_ind = 0
-            r = bernoulli(arms_thetas[action]).rvs()
-            if not converged:
-                converged = True
-                print('Run {0} Converged'.format(run))
-        else:
-            action, query_ind, node = mctree.tree_search(Q.copy(), max_depth=delayed_tree_expansion, root=node,
-                                                         max_simulations=max_simulations, t=t, horizon=T, arms_p_confidences=None)
-            r = bernoulli(arms_thetas[action]).rvs()
-            if query_ind:
-                mctree.q_update(Q, action, query_ind, r)  # , log_dict=Q_vals_dict
-                # Update rewards history for bayesian update
-                mctree.update_arm_dict(action, r)
-                a_0, b_0, a_1, b_1 = get_a_b(mctree.arms_dicts)
-                new_0_mean = calc_mean_bernouli_param(a_0, b_0)
-                new_1_mean = calc_mean_bernouli_param(a_1, b_1)
-                arms_p_means = [new_0_mean, new_1_mean]
-                arms_p_confidences = update_arms_conf(arms_p_confidences, new_0_mean, new_1_mean)
-                arms_p_confidences_history["arm_0"].append(arms_p_confidences[0])
-                arms_p_confidences_history["arm_1"].append(arms_p_confidences[1])
+        action, query_ind, node = mctree.tree_search(Q.copy(), max_depth=delayed_tree_expansion, root=node,
+                                                     max_simulations=max_simulations, t=t, horizon=T)
+        r = bernoulli(arms_thetas[action]).rvs()
+        if query_ind:
+            mctree.q_update(Q, action, query_ind, r)  # , log_dict=Q_vals_dict
+            # Update rewards history for bayesian update
+            mctree.update_arm_dict(action, r)
 
         new_history = list(actions_history)
         new_history.append((action, query_ind))
@@ -113,9 +70,6 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
         with csv_writer_lock:
             writer_func(writer_path, run, t, arms_thetas, base_query_cost, mctree.query_cost, T, regret, action,
                         query_ind, r, seed)
-
-    #df = pd.DataFrame(arms_p_confidences_history)
-    #df.to_csv("./conf_values/{0}_{1}".format(run, writer_path.split("records_tests/")[1]), index=False)
 
 
 if __name__ == "__main__":
