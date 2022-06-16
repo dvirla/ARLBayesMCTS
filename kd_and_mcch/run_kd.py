@@ -1,7 +1,7 @@
 from bandits import knowledgeGradientChangingCostPolicy, runExperiment
 import argparse
 import pandas as pd
-
+import pickle
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -30,5 +30,9 @@ if __name__ == "__main__":
              'query_cost': query_costs, 'horizon': horizon, 'chosen_arm': chosen_arms, 'query_ind': query_inds,
              'reward': rewards}
     df = pd.DataFrame(to_df)
-    df.to_csv('./kd_50_horizon_100_runs_svetas_settings.csv', index=False)
-
+    writer_path = './kd_records/kd_{0}_horizon_{1}_arms.csv'.format(args.horizon,
+                                                                 '_'.join([str.rstrip(''.join(str(x).split('.')), '0')
+                                                                           for x in args.arms_thetas]))
+    df.to_csv(writer_path, index=False)
+    with open(writer_path.split('.csv')[0]+'.pkl', 'wb') as f:
+        pickle.dump(args, f)
