@@ -85,7 +85,7 @@ if __name__ == "__main__":
     parser.add_argument('--exploration_const', type=float, default=1, metavar='')
     parser.add_argument('--max_simulations', type=int, default=1000, metavar='')
     parser.add_argument('--horizon', type=int, default=500, metavar='')
-    parser.add_argument('--arms_thetas', type=tuple, default=(0.2, 0.8), metavar='')
+    parser.add_argument('--arms_thetas', nargs='+', type=float, default=[0.2, 0.8], metavar='')
     parser.add_argument('--runs', type=int, default=1, metavar='')
     parser.add_argument('--delayed_tree_expansion', type=int, default=10, metavar='')
     parser.add_argument('--increase_factor', type=float, default=2., metavar='')
@@ -93,6 +93,7 @@ if __name__ == "__main__":
     parser.add_argument('--use_temperature', action='store_true')
 
     args = parser.parse_args()
+    args.arms_thetas = tuple(args.arms_thetas)
     num_workers = max(mp.cpu_count() - 40, 4)
     exp_const = str(args.exploration_const).split('.')
     if len(exp_const) > 1 and exp_const[-1] == "0":
@@ -102,11 +103,14 @@ if __name__ == "__main__":
 
     now = datetime.now()
     now = now.strftime("%m%d%Y%H%M%S")
-    writer_path = './records_tests/test_record_{0}_sim_{1}_exp_{2}_runs_{3}_tree_{4}.csv'.format(args.max_simulations,
+    writer_path = './records_tests/test_record_{0}_sim_{1}_exp_{2}_arms_{3}_tree_{4}.csv'.format(args.max_simulations,
                                                                                               exp_const,
-                                                                                              args.runs,
+                                                                                              '_'.join([str.rstrip(''.join(str(x).split('.')), '0')
+                                                                                                        for x in args.arms_thetas]),
                                                                                               args.delayed_tree_expansion,
                                                                                                 now)
+    print(writer_path)
+    exit(0)
     with open(writer_path.split('.csv')[0]+'.pkl', 'wb') as f:
         pickle.dump(args, f)
 
