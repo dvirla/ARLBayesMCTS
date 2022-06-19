@@ -49,13 +49,18 @@ class Bandit(object):
     def pull_arm(self, j):
         return int(self.mus[j] > random.random())
 
-    def cost_fn(self, query_ind):
-        new_cost = query_ind * self.cost * self.increase_factor + \
-                     (1 - query_ind) * max(self.cost * self.decrease_factor, self.base_query_cost)
-        return new_cost
+    def cost_fn(self, query_ind, num_queries=1, curr_cost=None):
+        if curr_cost is None:
+            curr_cost = self.cost
+        new_cost = query_ind * curr_cost * self.increase_factor + \
+                   (1 - query_ind) * max(curr_cost * self.decrease_factor, self.base_query_cost)
+        if num_queries <= 1:
+            return new_cost
+        else:
+            return new_cost + self.cost_fn(query_ind=1, num_queries=num_queries - 1, curr_cost=new_cost)
 
     def update_cost(self, query_ind):
-        self.cost = self.cost_fn(query_ind)
+        self.cost = self.cost_fn(query_ind, num_queries=1)
 
     def __str__(self):
         return ("{1}-armed active Bernoulli bandit " +
@@ -132,53 +137,6 @@ def Arm1Policy(T, s, n, t, cost=0):
 def RoundRobinPolicy(T, s, n, t, cost=0):
     """policy that alternates between all arms"""
     return t % len(T)
-
-
-# The following two policies are both shit
-
-# function [j query] = activeBanditPolicy1(T, s, n, t, cost, c = 1/2)
-# 	% shitty heuristic
-# 	k = length(T); % number of arms
-# 	if any(T == 0)
-# 		j = find(T == 0, 1);
-# 		query = true;
-# 	else
-# 		ucb = s ./ T + sqrt(c * log(n / t) ./ T) - cost * T / (n - t + 1);
-# 		m = max(ucb);
-# 		mu_hats = (s + 1) ./ (T + 2);
-# 		idx = find(ucb == m);
-# 		if m <= max(mu_hats)
-# 			[_, j] = max(mu_hats);
-# 			query = false;
-# 		else
-# 			j = idx(1 + floor(length(idx) * rand()));
-# 			query = true;
-# 		end
-# 	end
-# end
-#
-# function [j query] = activeBanditPolicy2(T, s, n, t, cost, c = 1/2)
-# 	% shitty heuristic
-# 	k = length(T); % number of arms
-# 	if any(T == 0)
-# 		j = find(T == 0, 1);
-# 		query = true;
-# 	else
-# 		ucb = s ./ T + sqrt(c * log(n / t) ./ T) - cost * sqrt(T / n);
-# 		m = max(ucb);
-# 		mu_hats = (s + 1) ./ (T + 2);
-# 		idx = find(ucb == m);
-# 		j = idx(1 + floor(length(idx) * rand()));
-# 		idx2 = 1:k;
-# 		idx2([j]) = [];
-# 		if m > max(mu_hats(idx2)) || T(j) < max(T(idx2))
-# 			query = true;
-# 		else
-# 			[_, j] = max(mu_hats);
-# 			query = false;
-# 		end
-# 	end
-# end
 
 
 def expectedRegret(T, s, n, t, arm, tol=1e-3):
@@ -370,6 +328,29 @@ def parameterizedRegretQuery(T, s, n, t, cost, banditpolicy=DMED, alpha=0.35):
         return best_arm, False
 
 
+def parameterizedRegretQueryChangingCost(T, s, n, t, cost_fn, banditpolicy=DMED, alpha=0.35):
+    """
+    execute bandit policy until
+    cost to move posterior < alpha * expected regret
+    with parameter alpha \in (0, 1)
+    """
+    # mu_hats = np.add(s, 1) / np.add(T, 2).astype(float)
+    # best_arm = np.argmax(mu_hats)
+    best_arm = bestArm(T, s)
+    query_steps = querySteps4(T, s)
+    if t + query_steps >= n:
+        # instant commitment because the time frame is too long
+        return best_arm, 0
+    # query = np.sum(costs) < alpha * minExpectedRegret(T, s, n, t)
+
+    cum_cost = cost_fn(query_ind=1, num_queries=query_steps)
+    query = cum_cost < alpha * expectedRegret(T, s, n, t, best_arm, tol=1e-3)
+    if query:
+        return banditpolicy(T, s, n, t), 1
+    else:
+        return best_arm, 0
+
+
 def minGap(T, s):
     """Return the minimal gap between two distince arms"""
     mu_hats = np.add(s, 1) / np.add(T, 2).astype(float)
@@ -423,22 +404,20 @@ def knowledgeGradientChangingCostPolicy(T, s, n, t, cost_fn):
     """See Section 5.2 in Warren Powell and Ilya Ryzhov.
     Optimal Learning. John Wiley & Sons, 2012."""
     k = len(T)
-    mu_hats = np.add(s, 1) / np.add(T, 2).astype(float)
+    # mu_hats = np.add(s, 1) / np.add(T, 2).astype(float)
+    best_arm = bestArm(T, s)
     m = 0
     j = None
     for i in range(k):
-        if i != np.argmax(mu_hats):
-            m_list = [knowledgeGradient(T, s, n, t, l, i) * (n - t) for l in range(int(sqrt(n)))]
-            query_inds = [1 if m_ > max(m, 0) else 0 for m_ in m_list]
-            costs = [cost_fn(query_ind) for query_ind in query_inds]
-            m_ = max(np.array(m_list) - np.array(costs))
+        if i != best_arm:
+            m_ = max([knowledgeGradient(T, s, n, t, l, i)*(n-t) - cost_fn(query_ind=l>0, num_queries=l) for l in range(int(sqrt(n)))])
             if m_ > m:
                 m = m_
                 j = i
     if m > 0 and j is not None:
         return j, 1
     else:
-        return bestArm(T, s), 0
+        return best_arm, 0
 
 
 def TorsPolicy(T, s, n, t, cost, c=0.5):
@@ -522,8 +501,8 @@ def playBernoulli(bandit, policy, assume_commitment=True, **kwargs):
     k = bandit.num_arms()
     T = [0] * k  # number of times pulled each arm
     s = [0] * k  # number of successes on each arm
-    regret = 0  # cumulative undiscounted regret
-    cregret = [0]
+    # regret = 0  # cumulative undiscounted regret
+    # cregret = [0]
     query = True
     last_query_step = 0
 
@@ -534,7 +513,7 @@ def playBernoulli(bandit, policy, assume_commitment=True, **kwargs):
     rewards = []
 
     for t in range(bandit.n):
-        old_query = query
+        # old_query = query
         j, query = policy(T, s, bandit.n, t, bandit.cost_fn, **kwargs)
         r = bandit.pull_arm(j)
 
@@ -544,29 +523,30 @@ def playBernoulli(bandit, policy, assume_commitment=True, **kwargs):
         chosen_arms.append(j)
         query_inds.append(query)
 
-        if query:
-            T[j] += 1
-            s[j] += r
-            regret += bandit.cost
-            last_query_step = t
-        elif old_query:
-            #            print('stopping at t = %d. Commited to arm %d' % (t, j + 1))
-            if assume_commitment:
-                d = bandit.best_mu() - bandit.mus[j]
-                cregret.extend([regret + d * i
-                                for i in range(1, bandit.n - t + 1)])
-                regret += d * (bandit.n - t)
-                break
-
-        regret += bandit.best_mu() - bandit.mus[j]
-        cregret.append(regret)
-    #    print('regret = %.2f' % regret)
+        # if query:
+        #     T[j] += 1
+        #     s[j] += r
+        #     regret += bandit.cost
+        #     last_query_step = t
+    #     elif old_query:
+    #         #            print('stopping at t = %d. Commited to arm %d' % (t, j + 1))
+    #         if assume_commitment:
+    #             d = bandit.best_mu() - bandit.mus[j]
+    #             cregret.extend([regret + d * i
+    #                             for i in range(1, bandit.n - t + 1)])
+    #             regret += d * (bandit.n - t)
+    #             break
+    #
+    #     regret += bandit.best_mu() - bandit.mus[j]
+    #     cregret.append(regret)
+    # #    print('regret = %.2f' % regret)
 
     # return {'cregret': cregret, 'last query step': last_query_step}
     return timesteps, rewards, query_costs, chosen_arms, query_inds
 
 
-def runExperiment(mus, n, cost, increase_factor, decrease_factor, policy, N, assume_commitment=False, progressbar=False, **kwargs):
+def runExperiment(mus, n, cost, increase_factor, decrease_factor, policy, N, assume_commitment=False, progressbar=False,
+                  **kwargs):
     # if progressbar:
     # from IPython.html.widgets import FloatProgressWidget
     # from IPython.display import display
@@ -574,6 +554,8 @@ def runExperiment(mus, n, cost, increase_factor, decrease_factor, policy, N, ass
     # display(f)
     runs = []
     timesteps = []
+    print(n)
+    print(N)
     arms_thetas = [mus] * n * N
     base_query_cost = [cost] * n * N
     query_costs = []
@@ -585,7 +567,10 @@ def runExperiment(mus, n, cost, increase_factor, decrease_factor, policy, N, ass
     for i in tqdm(range(N)):
         #        random.shuffle(mus)
         bandit = Bandit(mus, n, cost, increase_factor, decrease_factor)
-        temp_timesteps, temp_rewards, temp_query_costs, temp_chosen_arms, temp_query_inds = playBernoulli(bandit, policy, assume_commitment, **kwargs)
+        temp_timesteps, temp_rewards, temp_query_costs, temp_chosen_arms, temp_query_inds = playBernoulli(bandit,
+                                                                                                          policy,
+                                                                                                          assume_commitment,
+                                                                                                          **kwargs)
         runs.extend([i] * n)
         timesteps.extend(temp_timesteps)
         query_costs.extend(temp_query_costs)
