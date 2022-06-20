@@ -554,8 +554,6 @@ def runExperiment(mus, n, cost, increase_factor, decrease_factor, policy, N, ass
     # display(f)
     runs = []
     timesteps = []
-    print(n)
-    print(N)
     arms_thetas = [mus] * n * N
     base_query_cost = [cost] * n * N
     query_costs = []

@@ -17,7 +17,7 @@ def run_multi_expiriemnt(horizon, runs):
                 policy,
                 runs, progressbar=True)
 
-            to_df = {'run': runs, 'timestep': timesteps, 'mus': arms_thetas, 'base_query_cost': base_query_cost,
+            to_df = {'run': runs_list, 'timestep': timesteps, 'mus': arms_thetas, 'base_query_cost': base_query_cost,
                      'query_cost': query_costs, 'horizon': horizons, 'chosen_arm': chosen_arms, 'query_ind': query_inds,
                      'reward': rewards}
             df = pd.DataFrame(to_df)
