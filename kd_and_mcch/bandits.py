@@ -523,9 +523,9 @@ def playBernoulli(bandit, policy, assume_commitment=True, **kwargs):
         chosen_arms.append(j)
         query_inds.append(query)
 
-        # if query:
-        #     T[j] += 1
-        #     s[j] += r
+        if query:
+            T[j] += 1
+            s[j] += r
         #     regret += bandit.cost
         #     last_query_step = t
     #     elif old_query:
