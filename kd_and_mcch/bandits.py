@@ -564,6 +564,9 @@ def runExperiment(mus, n, cost, increase_factor, decrease_factor, policy, N, ass
     # results = []
     for i in tqdm(range(N)):
         #        random.shuffle(mus)
+        np.random.seed(i)
+        random.seed(i)
+
         bandit = Bandit(mus, n, cost, increase_factor, decrease_factor)
         temp_timesteps, temp_rewards, temp_query_costs, temp_chosen_arms, temp_query_inds = playBernoulli(bandit,
                                                                                                           policy,
