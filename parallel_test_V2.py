@@ -109,8 +109,6 @@ if __name__ == "__main__":
                                                                                                         for x in args.arms_thetas]),
                                                                                               args.delayed_tree_expansion,
                                                                                                 now)
-    print(writer_path)
-    exit(0)
     with open(writer_path.split('.csv')[0]+'.pkl', 'wb') as f:
         pickle.dump(args, f)
 
