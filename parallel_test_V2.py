@@ -76,42 +76,43 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
                         query_ind, r, seed)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--learning_rate', type=float, default=1.,
-                        metavar='')  # No learning rate according to both papers
-    parser.add_argument('--discount_factor', type=float, default=0.95, metavar='')
-    parser.add_argument('--base_query_cost', type=float, default=0., metavar='')
-    parser.add_argument('--exploration_const', type=float, default=1, metavar='')
-    parser.add_argument('--max_simulations', type=int, default=1000, metavar='')
-    parser.add_argument('--horizon', type=int, default=500, metavar='')
-    parser.add_argument('--arms_thetas', nargs='+', type=float, default=[0.2, 0.8], metavar='')
-    parser.add_argument('--runs', type=int, default=1, metavar='')
-    parser.add_argument('--delayed_tree_expansion', type=int, default=10, metavar='')
-    parser.add_argument('--increase_factor', type=float, default=2., metavar='')
-    parser.add_argument('--decrease_factor', type=float, default=0.5, metavar='')
-    parser.add_argument('--use_temperature', action='store_true')
-
-    args = parser.parse_args()
-    args.arms_thetas = tuple(args.arms_thetas)
-    num_workers = max(mp.cpu_count() - 40, 4)
+def run_multi_expiriemnt(args):
+    combs = [((0.2, 0.8), 1, 2, 0.5), ((1, 0), 1, 2, 0.5), ((0.5, 0.5), 1, 2, 0.5),
+             ((1, 0), 0.5, 1, 1), ((0.2, 0.8), 0.5, 1, 1), ((0.2, 0.8), 0, 1, 1), ((1, 0), 0, 1, 1)]
     exp_const = str(args.exploration_const).split('.')
     if len(exp_const) > 1 and exp_const[-1] == "0":
         exp_const = ''.join(exp_const[:-1])
     else:
         exp_const = ''.join(exp_const)
 
-    now = datetime.now()
-    now = now.strftime("%m%d%Y%H%M%S")
-    writer_path = './records_tests/test_record_{0}_sim_{1}_exp_{2}_arms_{3}_tree_{4}.csv'.format(args.max_simulations,
-                                                                                              exp_const,
-                                                                                              '_'.join([str.rstrip(''.join(str(x).split('.')), '0')
-                                                                                                        for x in args.arms_thetas]),
-                                                                                              args.delayed_tree_expansion,
-                                                                                                now)
-    with open(writer_path.split('.csv')[0]+'.pkl', 'wb') as f:
-        pickle.dump(args, f)
+    for mus, cost, increase_factor, decrease_factor in combs:
+        args.increase_factor = increase_factor
+        args.decrease_factor = decrease_factor
+        args.base_query_cost = cost
+        args.arms_thetas = mus
+        if increase_factor != 1:
+            folder = '/changing_cost'
+            writer_cost = 'changing_cost'
+        else:
+            folder = '/fixed_cost'
+            writer_cost = '05_cost' if cost != 0 else 'no_cost'
 
+        writer_path = './records_tests/with_temperature/{0}/test_record_{1}_{2}_sim_{3}_exp_{4}_arms_{5}_tree_{6}.csv'.format(
+            folder, writer_cost, args.max_simulations,
+            exp_const,
+            '_'.join([str.rstrip(''.join(str(x).split('.')), '0')
+                      for x in args.arms_thetas]),
+            args.delayed_tree_expansion,
+            now)
+
+        runner(writer_path, args)
+
+        with open(writer_path.split('.csv')[0] + '.pkl', 'wb') as f:
+            pickle.dump({'mus': mus, 'cost': cost, 'inc_factor': increase_factor, 'dec_factor': decrease_factor}, f)
+
+
+def runner(writer_path, args, ):
+    num_workers = max(mp.cpu_count() - 40, 4)
     with open(writer_path, 'w', newline='') as csvfile:
         fieldnames = ['run', 'timestep', 'mus', 'base_query_cost', 'query_cost', 'horizon', 'regret', 'chosen_arm',
                       'query_ind', 'reward', 'seed']
@@ -136,3 +137,45 @@ if __name__ == "__main__":
     with Pool(num_workers) as p:
         for i, _ in enumerate(p.starmap(BAMCP_PP, func_args), 1):
             print('\rdone {0:.2%}'.format(i / num_tasks))
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--learning_rate', type=float, default=1.,
+                        metavar='')  # No learning rate according to both papers
+    parser.add_argument('--discount_factor', type=float, default=0.95, metavar='')
+    parser.add_argument('--base_query_cost', type=float, default=0., metavar='')
+    parser.add_argument('--exploration_const', type=float, default=1, metavar='')
+    parser.add_argument('--max_simulations', type=int, default=1000, metavar='')
+    parser.add_argument('--horizon', type=int, default=500, metavar='')
+    parser.add_argument('--arms_thetas', nargs='+', type=float, default=[0.2, 0.8], metavar='')
+    parser.add_argument('--runs', type=int, default=1, metavar='')
+    parser.add_argument('--delayed_tree_expansion', type=int, default=10, metavar='')
+    parser.add_argument('--increase_factor', type=float, default=2., metavar='')
+    parser.add_argument('--decrease_factor', type=float, default=0.5, metavar='')
+    parser.add_argument('--use_temperature', action='store_true')
+    parser.add_argument('--multi_exp', action='store_true')
+
+    args = parser.parse_args()
+    if args.multi_exp:
+        run_multi_expiriemnt(args)
+    else:
+        args.arms_thetas = tuple(args.arms_thetas)
+        exp_const = str(args.exploration_const).split('.')
+        if len(exp_const) > 1 and exp_const[-1] == "0":
+            exp_const = ''.join(exp_const[:-1])
+        else:
+            exp_const = ''.join(exp_const)
+
+        now = datetime.now()
+        now = now.strftime("%m%d%Y%H%M%S")
+        writer_path = './records_tests/test_record_{0}_sim_{1}_exp_{2}_arms_{3}_tree_{4}.csv'.format(args.max_simulations,
+                                                                                                  exp_const,
+                                                                                                  '_'.join([str.rstrip(''.join(str(x).split('.')), '0')
+                                                                                                            for x in args.arms_thetas]),
+                                                                                                  args.delayed_tree_expansion,
+                                                                                                    now)
+        with open(writer_path.split('.csv')[0]+'.pkl', 'wb') as f:
+            pickle.dump(args, f)
+
+        runner(writer_path, args)
