@@ -171,7 +171,8 @@ if __name__ == "__main__":
         else:
             exp_const = ''.join(exp_const)
 
-        writer_path = './records_tests/test_record_{0}_sim_{1}_exp_{2}_arms_{3}_tree_{4}.csv'.format(args.max_simulations,
+        is_temp = 'with_temp' if args.use_temperature else ''
+        writer_path = './records_tests/test_record_{0}_{1}_sim_{2}_exp_{3}_arms_{4}_tree_{5}.csv'.format(is_temp,args.max_simulations,
                                                                                                   exp_const,
                                                                                                   '_'.join([str.rstrip(''.join(str(x).split('.')), '0')
                                                                                                             for x in args.arms_thetas]),
