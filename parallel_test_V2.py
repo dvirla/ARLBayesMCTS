@@ -172,12 +172,19 @@ if __name__ == "__main__":
             exp_const = ''.join(exp_const)
 
         is_temp = 'with_temp' if args.use_temperature else ''
-        writer_path = './records_tests/test_record_{0}_{1}_sim_{2}_exp_{3}_arms_{4}_tree_{5}.csv'.format(is_temp,args.max_simulations,
-                                                                                                  exp_const,
-                                                                                                  '_'.join([str.rstrip(''.join(str(x).split('.')), '0')
-                                                                                                            for x in args.arms_thetas]),
-                                                                                                  args.delayed_tree_expansion,
-                                                                                                    now)
+        if args.increase_factor != 1:
+            w_cost = 'changing_cost'
+        else:
+            w_cost = '05_cost' if args.base_query_cost != 0 else 'no_cost'
+
+        writer_path = './records_tests/test_record_{0}_{1}_{2}_sim_{3}_exp_{4}_arms_{5}_tree_{6}.csv'.format(
+            is_temp, w_cost, args.max_simulations,
+            exp_const,
+            '_'.join([str.rstrip(''.join(str(x).split('.')), '0')
+                      for x in args.arms_thetas]),
+            args.delayed_tree_expansion,
+            now)
+
         with open(writer_path.split('.csv')[0]+'.pkl', 'wb') as f:
             pickle.dump(args, f)
 
