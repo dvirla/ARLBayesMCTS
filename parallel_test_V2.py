@@ -13,6 +13,8 @@ from datetime import datetime
 
 # create the lock
 csv_writer_lock = threading.Lock()
+now = datetime.now()
+now = now.strftime("%m%d%Y%H%M%S")
 
 
 def parallel_write(writer_path, run, t, arms_thetas, base_query_cost, query_cost, T, regret, action, query_ind, r,
@@ -169,8 +171,6 @@ if __name__ == "__main__":
         else:
             exp_const = ''.join(exp_const)
 
-        now = datetime.now()
-        now = now.strftime("%m%d%Y%H%M%S")
         writer_path = './records_tests/test_record_{0}_sim_{1}_exp_{2}_arms_{3}_tree_{4}.csv'.format(args.max_simulations,
                                                                                                   exp_const,
                                                                                                   '_'.join([str.rstrip(''.join(str(x).split('.')), '0')
