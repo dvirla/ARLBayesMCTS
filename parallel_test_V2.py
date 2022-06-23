@@ -17,6 +17,8 @@ csv_writer_lock = threading.Lock()
 
 def parallel_write(writer_path, run, t, arms_thetas, base_query_cost, query_cost, T, regret, action, query_ind, r,
                    seed):
+    fieldnames = ['run', 'timestep', 'mus', 'base_query_cost', 'query_cost', 'horizon', 'regret', 'chosen_arm',
+                  'query_ind', 'reward', 'seed']
     with open(writer_path, 'a', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writerow(
