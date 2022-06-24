@@ -30,7 +30,7 @@ def parallel_write(writer_path, run, t, arms_thetas, base_query_cost, query_cost
 
 
 def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, base_query_cost, exploration_const,
-             max_simulations, arms_thetas: tuple, delayed_tree_expansion, seed, increase_factor, decrease_factor, use_temperature):
+             max_simulations, arms_thetas: tuple, delayed_tree_expansion, seed, increase_factor, decrease_factor, use_temperature, limit_temperature):
     """
     :param exploration_const: exploration constant for choosing next action during simulation via UCB.
     :param decrease_factor: decrease factor of the query cost
@@ -60,7 +60,7 @@ def BAMCP_PP(writer_func, writer_path, run, T, learning_rate, discount_factor, b
     for t in range(T):
         if use_temperature:
             action, query_ind, node = mctree.tree_search(Q.copy(), max_depth=delayed_tree_expansion, root=node,
-                                                         max_simulations=max_simulations, t=t, horizon=T)
+                                                         max_simulations=max_simulations, t=t, horizon=T, limit_temperature=limit_temperature)
         else:
             action, query_ind, node = mctree.tree_search(Q.copy(), max_depth=delayed_tree_expansion, root=node,
                                                          max_simulations=max_simulations)
@@ -134,7 +134,7 @@ def runner(writer_path, args, ):
                           base_query_cost,
                           args.exploration_const, args.max_simulations,
                           args.arms_thetas, args.delayed_tree_expansion, seed,
-                          args.increase_factor, args.decrease_factor, args.use_temperature))
+                          args.increase_factor, args.decrease_factor, args.use_temperature, args.limit_temperature))
         seed += 1
 
     num_tasks = len(func_args)
@@ -158,6 +158,7 @@ if __name__ == "__main__":
     parser.add_argument('--increase_factor', type=float, default=2., metavar='')
     parser.add_argument('--decrease_factor', type=float, default=0.5, metavar='')
     parser.add_argument('--use_temperature', action='store_true')
+    parser.add_argument('--limit_temperature', type=int, default=20, metavar='')
     parser.add_argument('--multi_exp', action='store_true')
 
     args = parser.parse_args()

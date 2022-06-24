@@ -23,15 +23,15 @@ class MCTSNode:
             new_node = MCTSNode(tuple(new_history), parent=self)
             self.children[(action, query_ind)] = new_node
 
-    def get_argmax(self, t=None, horizon=None):
-        if t is not None and horizon is not None:
-            # if t > 0.02 * horizon:
-            #     action, query_ind = np.unravel_index(np.argmax(self.Q_per_action, axis=None), self.Q_per_action.shape)
-            # else:
-            biased_Q = deepcopy(self.Q_per_action)
-            biased_Q[:, 0] = biased_Q[:, 0]/(horizon - t)
-            biased_Q[:, 1] = biased_Q[:, 1] / t
-            action, query_ind = np.unravel_index(np.argmax(biased_Q, axis=None), biased_Q.shape)
+    def get_argmax(self, t=None, horizon=None, limit_temperature=None):
+        if t is not None and limit_temperature is not None and horizon is not None:
+            if t > limit_temperature:
+                action, query_ind = np.unravel_index(np.argmax(self.Q_per_action, axis=None), self.Q_per_action.shape)
+            else:
+                biased_Q = deepcopy(self.Q_per_action)
+                biased_Q[:, 0] = biased_Q[:, 0]/(horizon - t)
+                biased_Q[:, 1] = biased_Q[:, 1] / t
+                action, query_ind = np.unravel_index(np.argmax(biased_Q, axis=None), biased_Q.shape)
             return action, query_ind
 
         action, query_ind = np.unravel_index(np.argmax(self.Q_per_action, axis=None), self.Q_per_action.shape)
@@ -109,7 +109,7 @@ class MCTree:
             self.query_cost = query_cost
         return query_cost
 
-    def tree_search(self, Q_M, max_depth, root, max_simulations=1, t=None, horizon=None):
+    def tree_search(self, Q_M, max_depth, root, max_simulations=1, t=None, horizon=None, limit_temperature=None):
         if root is None:
             root = self.root
         for _ in range(max_simulations):
@@ -117,7 +117,7 @@ class MCTree:
             P_bernoullis = self.init_dist_params()
             _ = self.simulate(root, Q_pi, P_bernoullis, max_depth, curr_d=0)
 
-        action, query_ind = root.get_argmax(t, horizon)
+        action, query_ind = root.get_argmax(t, horizon, limit_temperature)
         _ = self.get_query_cost(query_ind, update=True)
 
         return action, query_ind, root.children[(action, query_ind)]
