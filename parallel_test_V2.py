@@ -172,7 +172,7 @@ if __name__ == "__main__":
         else:
             exp_const = ''.join(exp_const)
 
-        is_temp = 'with_temp' if args.use_temperature else ''
+        is_temp = 'with_lim_temp' if args.use_temperature else ''
         if args.increase_factor != 1:
             w_cost = 'changing_cost'
         else:
